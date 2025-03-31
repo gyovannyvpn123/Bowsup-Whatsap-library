@@ -17,7 +17,18 @@ WHATSAPP_MEDIA_DOWNLOAD_SERVER = 'cdn.whatsapp.net'
 PROTOCOL_VERSION = '2.2412.54'
 CLIENT_VERSION = '2.2412.54'
 USER_AGENT = f'WhatsApp/{CLIENT_VERSION} Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
-WA_SECRET_BUNDLE = 'BD3YXSsQmIiuQ/QQPVXnKQ=='  # This is a placeholder, in real implementation this should come from configuration
+
+# WhatsApp Web specific constants
+WA_SECRET_BUNDLE = {
+    "key": {
+        "id": 1,
+        "value": "secret-key-data"  # In a real implementation, this would be the actual key
+    },
+    "hmacKey": {
+        "id": 1,
+        "value": "hmac-key-data"    # In a real implementation, this would be the actual key
+    }
+}
 
 # Connection parameters
 CONNECT_TIMEOUT = 20  # seconds
@@ -64,6 +75,14 @@ STATUS_TYPE_UNAVAILABLE = 'unavailable'
 STATUS_TYPE_TYPING = 'composing'
 STATUS_TYPE_RECORDING = 'recording'
 STATUS_TYPE_PAUSED = 'paused'
+
+# Connection status codes
+CONNECTION_STATUS_DISCONNECTED = 0
+CONNECTION_STATUS_CONNECTING = 1
+CONNECTION_STATUS_CONNECTED = 2
+CONNECTION_STATUS_AUTHENTICATING = 3
+CONNECTION_STATUS_AUTHENTICATED = 4
+CONNECTION_STATUS_ERROR = 5
 
 # Group chat constants
 GROUP_CREATE = 'create'

@@ -1,334 +1,417 @@
 """
-WebSocket Protocol Manager for WhatsApp communication.
+WebSocket protocol implementation for WhatsApp.
 
-This module handles the WebSocket protocol used in the current WhatsApp Web API,
-including message encoding/decoding, binary message parsing, and protocol-specific
-handshakes.
+This module handles the WebSocket-specific communication protocol
+used by WhatsApp, including handshake, message format, and the
+specific sequences needed for authentication and messaging.
 """
 
-import logging
 import json
 import time
-import random
+import logging
+import asyncio
 import base64
-import struct
-from typing import Dict, Any, List, Optional, Union, Tuple, Callable, ByteString
+import uuid
+import random
+from typing import Dict, Any, Optional, List, Tuple, Union, Callable
 
-from bocksup.common.exceptions import ProtocolError, ParseError
+from bocksup.common.exceptions import ProtocolError, ConnectionError
 from bocksup.common.constants import (
-    CLIENT_VERSION, WA_SECRET_BUNDLE, PROTOCOL_VERSION,
-    TAG_MESSAGE, TAG_RECEIPT, TAG_PRESENCE, TAG_GROUP,
-    TAG_NOTIFICATION, TAG_RESPONSE, TAG_ERROR
+    CLIENT_VERSION, PROTOCOL_VERSION, WHATSAPP_WEBSOCKET_URL, USER_AGENT
 )
-from bocksup.common.utils import (
-    generate_message_id, timestamp_now, base64_encode, base64_decode
-)
+from bocksup.common.utils import generate_random_id
 
 logger = logging.getLogger(__name__)
 
-# Binary message types
-BINARY_TAG_MSG = 2
-BINARY_TAG_RECEIPT = 1
-BINARY_TAG_NOTIFICATION = 4
-
 class WebSocketProtocol:
     """
-    Handles the WebSocket protocol for WhatsApp Web.
+    Implementation of the WhatsApp WebSocket protocol.
     
-    This class is responsible for formatting messages in the format expected
-    by the WhatsApp Web API, and for parsing incoming messages from the API.
+    This class handles the format and sequence of messages required to
+    communicate with WhatsApp servers using their WebSocket protocol.
     """
     
     def __init__(self):
         """Initialize the WebSocket protocol handler."""
-        self._client_id = self._generate_client_id()
-        self._client_token = None
-        self._server_token = None
-        self._message_count = 0
-        self._message_tags = {}
-        self._last_seen_id = None
-    
-    def _generate_client_id(self) -> str:
-        """
-        Generate a client ID for this connection.
+        self.session_id = None
+        self.client_id = f"Bocksup_{uuid.uuid4().hex[:8]}"
+        self.message_counter = 0
+        self.last_message_tag = None
+        self.pending_messages = {}  # Message tags waiting for response
+        self.challenge_data = None  # Used to store auth challenge during login
+        self.pairing_code = None    # Used for phone pairing
         
-        Returns:
-            A unique client ID string
-        """
-        # Generate random base64-encoded ID
-        random_bytes = bytes(random.getrandbits(8) for _ in range(16))
-        return base64.b64encode(random_bytes).decode('utf-8')
-    
-    def encode_message(self, message: Dict[str, Any]) -> Union[str, bytes]:
-        """
-        Encode a message for sending over WebSocket.
-        
-        Args:
-            message: The message to encode
-            
-        Returns:
-            The encoded message as string or bytes
-            
-        Raises:
-            ProtocolError: If the message cannot be encoded
-        """
-        try:
-            # Add message tag if not present
-            if 'tag' not in message:
-                message['tag'] = TAG_MESSAGE
-                
-            # Add client tag to track responses
-            if message.get('tag') == TAG_MESSAGE:
-                tag = str(self._message_count)
-                self._message_count += 1
-                message['_tag'] = tag
-                
-                # Store in tag map for response matching
-                self._message_tags[tag] = message.get('id') or generate_message_id()
-            
-            # Add timestamps if not present
-            if 'timestamp' not in message:
-                message['timestamp'] = timestamp_now()
-                
-            # Convert to JSON
-            return json.dumps(message)
-            
-        except Exception as e:
-            logger.error(f"Failed to encode message: {str(e)}")
-            raise ProtocolError(f"Message encoding failed: {str(e)}")
-    
-    def decode_message(self, data: Union[str, bytes]) -> Dict[str, Any]:
-        """
-        Decode a message received over WebSocket.
-        
-        Args:
-            data: The raw message data
-            
-        Returns:
-            The decoded message as a dictionary
-            
-        Raises:
-            ParseError: If the message cannot be parsed
-        """
-        try:
-            # Handle binary messages
-            if isinstance(data, bytes):
-                return self._parse_binary_message(data)
-                
-            # Handle text (JSON) messages
-            if isinstance(data, str):
-                return json.loads(data)
-                
-            raise ParseError(f"Unsupported message type: {type(data)}")
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error: {str(e)}")
-            raise ParseError(f"Invalid JSON in message: {str(e)}")
-        except Exception as e:
-            logger.error(f"Failed to decode message: {str(e)}")
-            raise ParseError(f"Message decoding failed: {str(e)}")
-    
-    def _parse_binary_message(self, data: bytes) -> Dict[str, Any]:
-        """
-        Parse a binary message from WhatsApp.
-        
-        Args:
-            data: Binary message data
-            
-        Returns:
-            Parsed message as dictionary
-            
-        Raises:
-            ParseError: If the binary message cannot be parsed
-        """
-        try:
-            if len(data) < 3:
-                raise ParseError("Binary message too short")
-                
-            # First byte is message type
-            msg_type = data[0]
-            
-            # Handle different binary message types
-            if msg_type == BINARY_TAG_MSG:
-                return self._parse_binary_chat_message(data[1:])
-            elif msg_type == BINARY_TAG_RECEIPT:
-                return self._parse_binary_receipt(data[1:])
-            elif msg_type == BINARY_TAG_NOTIFICATION:
-                return self._parse_binary_notification(data[1:])
-            else:
-                # Try to parse as JSON for unknown types (some messages are JSON with binary prefix)
-                try:
-                    json_str = data[1:].decode('utf-8')
-                    return json.loads(json_str)
-                except:
-                    logger.warning(f"Unknown binary message type: {msg_type}")
-                    return {'type': 'unknown', 'binary_type': msg_type, 'data': base64_encode(data)}
-                    
-        except Exception as e:
-            logger.error(f"Binary message parse error: {str(e)}")
-            raise ParseError(f"Failed to parse binary message: {str(e)}")
-    
-    def _parse_binary_chat_message(self, data: bytes) -> Dict[str, Any]:
-        """
-        Parse a binary chat message.
-        
-        Args:
-            data: Binary message data (without type byte)
-            
-        Returns:
-            Parsed chat message
-        """
-        # This would contain the complete implementation for parsing binary chat messages
-        # For now, we'll return a placeholder
-        return {
-            'type': TAG_MESSAGE,
-            'binary': True,
-            'data': base64_encode(data),
-            '_needs_decryption': True
-        }
-    
-    def _parse_binary_receipt(self, data: bytes) -> Dict[str, Any]:
-        """
-        Parse a binary receipt message.
-        
-        Args:
-            data: Binary receipt data (without type byte)
-            
-        Returns:
-            Parsed receipt message
-        """
-        # This would contain the implementation for parsing binary receipts
-        return {
-            'type': TAG_RECEIPT,
-            'binary': True,
-            'data': base64_encode(data)
-        }
-    
-    def _parse_binary_notification(self, data: bytes) -> Dict[str, Any]:
-        """
-        Parse a binary notification.
-        
-        Args:
-            data: Binary notification data (without type byte)
-            
-        Returns:
-            Parsed notification message
-        """
-        # This would contain the implementation for parsing binary notifications
-        return {
-            'type': TAG_NOTIFICATION,
-            'binary': True,
-            'data': base64_encode(data)
-        }
-    
     def create_handshake_message(self) -> str:
         """
-        Create the initial handshake message for connecting to WhatsApp Web.
+        Create initial handshake message for WebSocket connection.
         
         Returns:
-            Handshake message as JSON string
+            JSON string with handshake message
         """
+        self.session_id = generate_random_id(10)
+        message_tag = f"{int(time.time())}.--{self.message_counter}"
+        self.message_counter += 1
+        self.last_message_tag = message_tag
+        
         handshake = {
-            "clientToken": self._client_token or self._client_id,
-            "clientVersion": CLIENT_VERSION,
-            "connectType": "WIFI_UNKNOWN",
+            "clientToken": self.client_id,
+            "serverToken": None,  # Initially null, will be set after auth
+            "clientId": f"python:{self.session_id}",
+            "tag": message_tag,
+            "type": "connect",
+            "version": CLIENT_VERSION,
+            "protocolVersion": PROTOCOL_VERSION,
+            "connectType": "PHONE_CONNECTING",
             "connectReason": "USER_ACTIVATED",
-            "pushName": "Bocksup",  # Can be customized
-            "device": {
-                "build": {
-                    "name": f"Bocksup {PROTOCOL_VERSION}"
-                },
-                "os": {
-                    "version": "10",
-                    "name": "Windows",
-                    "build": "10.0.19042"
+            "features": {
+                "supportsMultiDevice": True,
+                "supportsE2EEncryption": True,
+                "supportsQRLinking": True
+            }
+        }
+        
+        json_data = json.dumps(handshake)
+        logger.debug(f"Created handshake: {json_data[:100]}...")
+        return json_data
+        
+    def create_pairing_code_request(self, phone_number: str) -> str:
+        """
+        Create request for a pairing code.
+        
+        A pairing code is a short code (typically 8 digits) displayed on
+        the phone that can be used to authenticate without scanning a QR code.
+        
+        Args:
+            phone_number: Phone number in international format (e.g., 12025550108)
+            
+        Returns:
+            JSON string with pairing code request
+        """
+        message_tag = f"{int(time.time())}.--{self.message_counter}"
+        self.message_counter += 1
+        self.last_message_tag = message_tag
+        
+        request = {
+            "tag": message_tag,
+            "type": "request",
+            "method": "requestPairingCode",
+            "params": {
+                "phoneNumber": phone_number,
+                "requestMeta": {
+                    "platform": "python",
+                    "deviceId": self.client_id,
+                    "sessionId": self.session_id
                 }
             }
         }
         
-        return json.dumps(handshake)
-    
-    def create_login_message(self, phone_number: str, password: str) -> Dict[str, Any]:
+        json_data = json.dumps(request)
+        logger.debug(f"Created pairing code request: {json_data[:100]}...")
+        return json_data
+        
+    def create_pairing_code_verification(self, code: str) -> str:
         """
-        Create authentication message for WhatsApp Web.
+        Create verification message for pairing code authentication.
         
         Args:
-            phone_number: WhatsApp phone number
-            password: WhatsApp password
+            code: The pairing code received from the phone
             
         Returns:
-            Authentication message dictionary
+            JSON string with verification message
         """
-        # The actual WhatsApp Web login requires QR code scanning,
-        # but for compatibility with yowsup-style auth, we'll define this method
-        auth_msg = {
-            'tag': 'auth',
-            'phone': phone_number,
-            'password': password,
-            'client_id': self._client_id,
-            'client_token': self._client_token or '',
-            'secret_bundle': WA_SECRET_BUNDLE,
-            'protocol_version': PROTOCOL_VERSION
+        if not self.challenge_data:
+            raise ProtocolError("Missing challenge data for pairing verification")
+            
+        message_tag = f"{int(time.time())}.--{self.message_counter}"
+        self.message_counter += 1
+        self.last_message_tag = message_tag
+        
+        verification = {
+            "tag": message_tag,
+            "type": "response",
+            "method": "verifyPairingCode",
+            "params": {
+                "code": code,
+                "phoneNumber": self.challenge_data.get("phoneNumber", ""),
+                "deviceId": self.client_id,
+                "sessionId": self.session_id,
+                "challengeToken": self.challenge_data.get("challengeToken", "")
+            }
         }
         
-        return auth_msg
-    
-    def get_client_id(self) -> str:
+        json_data = json.dumps(verification)
+        logger.debug(f"Created pairing verification: {json_data[:100]}...")
+        return json_data
+        
+    def create_keep_alive(self) -> str:
         """
-        Get the client ID for this connection.
+        Create keep-alive message to maintain the WebSocket connection.
         
         Returns:
-            Client ID string
+            JSON string with keep-alive message
         """
-        return self._client_id
-    
-    def set_tokens(self, client_token: str, server_token: str) -> None:
-        """
-        Set authentication tokens.
+        message_tag = f"keepalive--{int(time.time())}"
         
-        Args:
-            client_token: Client auth token
-            server_token: Server auth token
-        """
-        self._client_token = client_token
-        self._server_token = server_token
-    
-    def create_presence_message(self, presence_type: str) -> Dict[str, Any]:
+        keepalive = {
+            "tag": message_tag,
+            "type": "ping",
+            "timestamp": int(time.time())
+        }
+        
+        return json.dumps(keepalive)
+        
+    def create_presence_update(self, presence_type: str = "available") -> str:
         """
         Create a presence update message.
         
         Args:
-            presence_type: Type of presence (available, unavailable, typing, etc.)
+            presence_type: Type of presence (e.g., "available", "unavailable")
             
         Returns:
-            Presence message dictionary
+            JSON string with presence update
         """
-        presence_msg = {
-            'tag': TAG_PRESENCE,
-            'type': presence_type,
-            'id': generate_message_id(),
-            'timestamp': timestamp_now()
+        message_tag = f"{int(time.time())}.--{self.message_counter}"
+        self.message_counter += 1
+        
+        presence = {
+            "tag": message_tag,
+            "type": "presence",
+            "status": presence_type,
+            "timestamp": int(time.time())
         }
         
-        return presence_msg
-    
-    def create_read_receipt(self, message_id: str, jid: str) -> Dict[str, Any]:
+        return json.dumps(presence)
+        
+    def process_message(self, message_data: Union[str, bytes]) -> Dict[str, Any]:
         """
-        Create a read receipt.
+        Process a message received from the WhatsApp server.
         
         Args:
-            message_id: ID of the message that was read
-            jid: JID of the sender
+            message_data: The received message data
             
         Returns:
-            Read receipt message dictionary
+            A dictionary with parsed message and metadata
+            
+        Raises:
+            ProtocolError: If the message cannot be processed
         """
-        receipt = {
-            'tag': TAG_RECEIPT,
-            'type': 'read',
-            'to': jid,
-            'id': message_id,
-            'timestamp': timestamp_now()
+        try:
+            # Parse the message
+            if isinstance(message_data, bytes):
+                # Try to decode as UTF-8 text first
+                try:
+                    message_text = message_data.decode('utf-8')
+                except UnicodeDecodeError:
+                    # Handle binary data (possibly encrypted or compressed)
+                    return {
+                        "type": "binary",
+                        "data": message_data,
+                        "timestamp": int(time.time())
+                    }
+            else:
+                message_text = message_data
+                
+            # Parse JSON message
+            message = json.loads(message_text)
+            
+            # Extract message type and tag
+            message_type = message.get("type", "unknown")
+            message_tag = message.get("tag", "")
+            
+            # Handle specific message types
+            if message_type == "challenge":
+                # This is an authentication challenge
+                logger.info("Received authentication challenge")
+                self.challenge_data = message.get("data", {})
+                return {
+                    "type": "challenge",
+                    "challenge_type": self.challenge_data.get("type", "unknown"),
+                    "tag": message_tag,
+                    "timestamp": int(time.time())
+                }
+                
+            elif message_type == "response":
+                # Check if this is a pairing code response
+                try:
+                    if isinstance(message_text, str) and "pairingCode" in message_text:
+                        message_data = message.get("data", {})
+                        if isinstance(message_data, dict) and "pairingCode" in message_data:
+                            self.pairing_code = message_data["pairingCode"]
+                            logger.info(f"Received pairing code: {self.pairing_code}")
+                            return {
+                                "type": "pairing_code",
+                                "code": self.pairing_code,
+                                "tag": message_tag,
+                                "timestamp": int(time.time())
+                            }
+                except (TypeError, AttributeError) as e:
+                    logger.warning(f"Error processing pairing code: {e}")
+                    
+            elif message_type == "connected":
+                # Connection confirmed
+                logger.info("Connection confirmed by server")
+                return {
+                    "type": "connected",
+                    "client_token": message.get("clientToken", ""),
+                    "server_token": message.get("serverToken", ""),
+                    "tag": message_tag,
+                    "timestamp": int(time.time())
+                }
+                
+            elif message_type == "message":
+                # Regular message
+                return {
+                    "type": "message",
+                    "content": message.get("content", {}),
+                    "sender": message.get("sender", ""),
+                    "tag": message_tag,
+                    "timestamp": message.get("timestamp", int(time.time()))
+                }
+                
+            elif message_type == "receipt":
+                # Message receipt
+                return {
+                    "type": "receipt",
+                    "receipt_type": message.get("receipt", ""),
+                    "message_id": message.get("id", ""),
+                    "sender": message.get("sender", ""),
+                    "tag": message_tag,
+                    "timestamp": message.get("timestamp", int(time.time()))
+                }
+                
+            elif message_type == "presence":
+                # Presence update
+                return {
+                    "type": "presence",
+                    "presence_type": message.get("status", ""),
+                    "sender": message.get("sender", ""),
+                    "tag": message_tag,
+                    "timestamp": message.get("timestamp", int(time.time()))
+                }
+                
+            elif message_type == "error":
+                # Error message
+                logger.error(f"Received error from server: {message.get('error', {})}")
+                return {
+                    "type": "error",
+                    "error_code": message.get("error", {}).get("code", 0),
+                    "error_message": message.get("error", {}).get("message", "Unknown error"),
+                    "tag": message_tag,
+                    "timestamp": int(time.time())
+                }
+                
+            # Handle unknown message types
+            logger.debug(f"Unknown message type: {message_type}, data: {message_text[:100]}...")
+            return {
+                "type": message_type,
+                "raw_data": message,
+                "tag": message_tag,
+                "timestamp": int(time.time())
+            }
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse message as JSON: {str(e)}")
+            return {
+                "type": "parse_error",
+                "error": str(e),
+                "raw_data": message_data if isinstance(message_data, str) else "<binary data>",
+                "timestamp": int(time.time())
+            }
+        except Exception as e:
+            logger.error(f"Error processing message: {str(e)}")
+            raise ProtocolError(f"Failed to process message: {str(e)}")
+            
+    def create_text_message(self, recipient: str, text: str) -> str:
+        """
+        Create a text message to send.
+        
+        Args:
+            recipient: The recipient's JID (e.g., 1234567890@s.whatsapp.net)
+            text: The message text
+            
+        Returns:
+            JSON string with text message
+        """
+        message_tag = f"{int(time.time())}.--{self.message_counter}"
+        self.message_counter += 1
+        message_id = f"MID.{uuid.uuid4().hex[:8]}"
+        
+        message = {
+            "tag": message_tag,
+            "type": "message",
+            "recipient": recipient,
+            "messageId": message_id,
+            "content": {
+                "type": "text",
+                "text": text
+            },
+            "timestamp": int(time.time())
         }
         
-        return receipt
+        # Store pending message
+        self.pending_messages[message_tag] = {
+            "id": message_id,
+            "recipient": recipient,
+            "timestamp": int(time.time())
+        }
+        
+        return json.dumps(message)
+        
+    def create_image_message(self, recipient: str, image_data: bytes, caption: Optional[str] = None) -> str:
+        """
+        Create an image message to send.
+        
+        Args:
+            recipient: The recipient's JID (e.g., 1234567890@s.whatsapp.net)
+            image_data: The binary image data
+            caption: Optional text caption for the image
+            
+        Returns:
+            JSON string with image message
+        """
+        message_tag = f"{int(time.time())}.--{self.message_counter}"
+        self.message_counter += 1
+        message_id = f"MID.{uuid.uuid4().hex[:8]}"
+        
+        # Convert image to base64
+        image_base64 = base64.b64encode(image_data).decode('utf-8')
+        
+        message = {
+            "tag": message_tag,
+            "type": "message",
+            "recipient": recipient,
+            "messageId": message_id,
+            "content": {
+                "type": "image",
+                "image": image_base64,
+                "caption": caption if caption else ""
+            },
+            "timestamp": int(time.time())
+        }
+        
+        # Store pending message
+        self.pending_messages[message_tag] = {
+            "id": message_id,
+            "recipient": recipient,
+            "timestamp": int(time.time())
+        }
+        
+        return json.dumps(message)
+        
+    def create_disconnect_message(self) -> str:
+        """
+        Create a disconnect message to gracefully end the session.
+        
+        Returns:
+            JSON string with disconnect message
+        """
+        message_tag = f"disconnect--{int(time.time())}"
+        
+        disconnect = {
+            "tag": message_tag,
+            "type": "disconnect",
+            "reason": "USER_INITIATED",
+            "timestamp": int(time.time())
+        }
+        
+        return json.dumps(disconnect)

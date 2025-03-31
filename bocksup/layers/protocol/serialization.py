@@ -1,251 +1,315 @@
 """
-Serialization for WhatsApp protocol messages.
+Message serialization and deserialization for WhatsApp protocol.
+
+This module handles the conversion between Python objects and the binary
+formats used in WhatsApp messaging protocol.
 """
 
 import json
-import logging
 import struct
 import zlib
-from typing import Dict, Any, Optional, Union, Tuple, List
+import base64
+import time
+import logging
+from typing import Any, Dict, List, Optional, Tuple, Union, ByteString
 
-from construct import Struct, Byte, Int16ub, Int32ub, Bytes, Prefixed
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-
-from bocksup.common.exceptions import ProtocolError
-from bocksup.layers.protocol.messages import (
-    ProtocolMessage, 
-    create_message_from_dict
-)
+from bocksup.common.exceptions import ParseError
+from bocksup.common.utils import to_bytes, from_bytes
 
 logger = logging.getLogger(__name__)
 
-class Serializer:
-    """
-    Handles serialization and deserialization of WhatsApp protocol messages.
+# Protocol constants
+WA_MESSAGE_HEADER_SIZE = 3
+WA_MESSAGE_FLAG_COMPRESSED = 0x02
+WA_MESSAGE_FLAG_ENCRYPTED = 0x01
+
+class BinaryEncoder:
+    """Encoder for binary WhatsApp protocol messages."""
     
-    This class converts between ProtocolMessage objects and binary or JSON
-    representations that are sent over the network.
-    """
-    
-    # Protocol header format using construct library
-    HEADER = Struct(
-        "version" / Byte,
-        "flags" / Byte,
-        "message_type" / Byte,
-        "length" / Int32ub,
-    )
-    
-    # Protocol versions
-    VERSION_BINARY = 1
-    VERSION_JSON = 2
-    VERSION_PROTOBUF = 3
-    
-    # Flags
-    FLAG_NONE = 0
-    FLAG_COMPRESSED = 1
-    FLAG_ENCRYPTED = 2
-    
-    def __init__(self, encryption_key: Optional[bytes] = None):
+    @staticmethod
+    def encode_message(message: Dict[str, Any], encrypt: bool = False, compress: bool = True) -> bytes:
         """
-        Initialize the serializer.
+        Encode a message dictionary to binary format.
         
         Args:
-            encryption_key: Optional encryption key for encrypted messages
-        """
-        self.encryption_key = encryption_key
-        
-    def serialize(self, 
-                  message: Union[ProtocolMessage, Dict[str, Any]], 
-                  compress: bool = False, 
-                  encrypt: bool = False) -> bytes:
-        """
-        Serialize a message to bytes.
-        
-        Args:
-            message: Message to serialize
-            compress: Whether to compress the message
+            message: The message dictionary to encode
             encrypt: Whether to encrypt the message
+            compress: Whether to compress the message
             
         Returns:
-            Serialized message as bytes
-            
-        Raises:
-            ProtocolError: If serialization fails
+            The encoded binary message
         """
-        try:
-            # Convert to dictionary if it's a ProtocolMessage
-            if isinstance(message, ProtocolMessage):
-                message_dict = message.to_dict()
-            else:
-                message_dict = message
-                
-            # Convert to JSON
-            message_data = json.dumps(message_dict).encode('utf-8')
-            
-            # Apply compression if requested
-            flags = self.FLAG_NONE
-            if compress:
-                message_data = zlib.compress(message_data)
-                flags |= self.FLAG_COMPRESSED
-                
-            # Apply encryption if requested
-            if encrypt:
-                if not self.encryption_key:
-                    raise ProtocolError("Encryption key not set")
-                    
-                message_data = self._encrypt_data(message_data)
-                flags |= self.FLAG_ENCRYPTED
-                
-            # Create header
-            header = self.HEADER.build({
-                "version": self.VERSION_JSON,
-                "flags": flags,
-                "message_type": 0,  # Not used for JSON, all info is in the JSON data
-                "length": len(message_data)
-            })
-            
-            # Combine header and message data
-            return header + message_data
-            
-        except Exception as e:
-            logger.error(f"Error serializing message: {str(e)}")
-            raise ProtocolError(f"Serialization error: {str(e)}")
-            
-    def deserialize(self, data: bytes) -> Tuple[ProtocolMessage, bytes]:
-        """
-        Deserialize bytes to a message.
+        # Convert to JSON string
+        json_data = json.dumps(message)
+        binary_data = json_data.encode('utf-8')
         
-        Args:
-            data: Bytes to deserialize
+        # Apply compression if requested
+        flags = 0
+        if compress and len(binary_data) > 200:  # Only compress larger messages
+            binary_data = zlib.compress(binary_data)
+            flags |= WA_MESSAGE_FLAG_COMPRESSED
             
-        Returns:
-            Tuple of (deserialized message, remaining data)
+        # Apply encryption if requested (in real implementation this would use E2E encryption)
+        if encrypt:
+            binary_data = BinaryEncoder._encrypt_data(binary_data)
+            flags |= WA_MESSAGE_FLAG_ENCRYPTED
             
-        Raises:
-            ProtocolError: If deserialization fails
+        # Create header (3 bytes: 1 for flags, 2 for length)
+        length = len(binary_data)
+        if length > 65535:
+            raise ValueError("Message too large to encode")
+            
+        header = struct.pack("!BH", flags, length)
+        
+        # Combine header and data
+        return header + binary_data
+        
+    @staticmethod
+    def _encrypt_data(data: bytes) -> bytes:
         """
-        try:
-            # Need at least the header to process
-            if len(data) < self.HEADER.sizeof():
-                return None, data
-                
-            # Parse header
-            header = self.HEADER.parse(data[:self.HEADER.sizeof()])
-            
-            # Get message length from header
-            message_length = header.length
-            
-            # Check if we have the complete message
-            total_length = self.HEADER.sizeof() + message_length
-            if len(data) < total_length:
-                return None, data
-                
-            # Extract message data
-            message_data = data[self.HEADER.sizeof():total_length]
-            
-            # Decrypt if needed
-            if header.flags & self.FLAG_ENCRYPTED:
-                if not self.encryption_key:
-                    raise ProtocolError("Message is encrypted but no encryption key is set")
-                    
-                message_data = self._decrypt_data(message_data)
-                
-            # Decompress if needed
-            if header.flags & self.FLAG_COMPRESSED:
-                message_data = zlib.decompress(message_data)
-                
-            # Parse based on version
-            if header.version == self.VERSION_JSON:
-                # Parse JSON data
-                message_dict = json.loads(message_data.decode('utf-8'))
-                
-                # Create appropriate message object
-                message = create_message_from_dict(message_dict)
-                
-            elif header.version == self.VERSION_BINARY:
-                # Binary format not implemented yet
-                raise ProtocolError("Binary format not supported yet")
-                
-            elif header.version == self.VERSION_PROTOBUF:
-                # Protobuf format not implemented yet
-                raise ProtocolError("Protobuf format not supported yet")
-                
-            else:
-                raise ProtocolError(f"Unknown protocol version: {header.version}")
-                
-            # Return the parsed message and any remaining data
-            return message, data[total_length:]
-            
-        except Exception as e:
-            logger.error(f"Error deserializing message: {str(e)}")
-            raise ProtocolError(f"Deserialization error: {str(e)}")
-            
-    def _encrypt_data(self, data: bytes) -> bytes:
-        """
-        Encrypt data using AES.
+        Encrypt binary data (placeholder implementation).
+        
+        In a real implementation, this would use proper E2E encryption.
         
         Args:
             data: Data to encrypt
             
         Returns:
             Encrypted data
+        """
+        # This is a placeholder - in a real implementation this would use proper encryption
+        return data  # For now, return unmodified
+
+
+class BinaryDecoder:
+    """Decoder for binary WhatsApp protocol messages."""
+    
+    @staticmethod
+    def decode_message(data: bytes) -> Dict[str, Any]:
+        """
+        Decode a binary message to a dictionary.
+        
+        Args:
+            data: The binary message data
+            
+        Returns:
+            The decoded message dictionary
             
         Raises:
-            ProtocolError: If encryption fails
+            ParseError: If the message cannot be decoded
         """
+        if len(data) < WA_MESSAGE_HEADER_SIZE:
+            raise ParseError("Message too short to decode")
+            
         try:
-            # Ensure data is padded correctly for AES
-            padded_data = pad(data, AES.block_size)
+            # Extract header
+            flags, length = struct.unpack("!BH", data[:WA_MESSAGE_HEADER_SIZE])
             
-            # Generate random IV
-            from Crypto.Random import get_random_bytes
-            iv = get_random_bytes(AES.block_size)
+            # Extract message body
+            message_data = data[WA_MESSAGE_HEADER_SIZE:]
+            if len(message_data) < length:
+                raise ParseError(f"Message truncated, expected {length} bytes, got {len(message_data)}")
+                
+            # Decrypt if necessary
+            if flags & WA_MESSAGE_FLAG_ENCRYPTED:
+                message_data = BinaryDecoder._decrypt_data(message_data)
+                
+            # Decompress if necessary
+            if flags & WA_MESSAGE_FLAG_COMPRESSED:
+                message_data = zlib.decompress(message_data)
+                
+            # Parse JSON
+            message_json = message_data.decode('utf-8')
+            return json.loads(message_json)
             
-            # Create cipher and encrypt
-            cipher = AES.new(self.encryption_key, AES.MODE_CBC, iv)
-            encrypted_data = cipher.encrypt(padded_data)
+        except (struct.error, zlib.error, UnicodeDecodeError, json.JSONDecodeError) as e:
+            raise ParseError(f"Failed to decode message: {str(e)}")
             
-            # Prepend IV to encrypted data
-            return iv + encrypted_data
-            
-        except Exception as e:
-            logger.error(f"Encryption error: {str(e)}")
-            raise ProtocolError(f"Encryption error: {str(e)}")
-            
-    def _decrypt_data(self, data: bytes) -> bytes:
+    @staticmethod
+    def _decrypt_data(data: bytes) -> bytes:
         """
-        Decrypt data using AES.
+        Decrypt binary data (placeholder implementation).
+        
+        In a real implementation, this would use proper E2E decryption.
         
         Args:
             data: Data to decrypt
             
         Returns:
             Decrypted data
-            
-        Raises:
-            ProtocolError: If decryption fails
         """
-        try:
-            # Extract IV from beginning of data
-            iv = data[:AES.block_size]
-            encrypted_data = data[AES.block_size:]
-            
-            # Create cipher and decrypt
-            cipher = AES.new(self.encryption_key, AES.MODE_CBC, iv)
-            decrypted_data = unpad(cipher.decrypt(encrypted_data), AES.block_size)
-            
-            return decrypted_data
-            
-        except Exception as e:
-            logger.error(f"Decryption error: {str(e)}")
-            raise ProtocolError(f"Decryption error: {str(e)}")
-            
-    def set_encryption_key(self, key: bytes) -> None:
+        # This is a placeholder - in a real implementation this would use proper decryption
+        return data  # For now, return unmodified
+
+
+class WebSocketMessageSerializer:
+    """Serializer for WhatsApp WebSocket protocol messages."""
+    
+    @staticmethod
+    def serialize_handshake(client_id: str, client_version: str) -> str:
         """
-        Set the encryption key.
+        Create a handshake message for WebSocket connection.
         
         Args:
-            key: Encryption key
+            client_id: Client identifier
+            client_version: Client version string
+            
+        Returns:
+            JSON string with handshake message
         """
-        self.encryption_key = key
+        handshake = {
+            "messageTag": f"handshake_{int(time.time())}",
+            "clientToken": client_id,
+            "protocolVersion": "0.4",
+            "connectType": "PHONE_CONNECTING",
+            "clientPayload": {
+                "connectReason": "USER_ACTIVATED",
+                "connectType": "WIFI_UNKNOWN",
+                "userAgent": {
+                    "platform": "android",
+                    "appVersion": client_version,
+                    "mcc": "000",
+                    "mnc": "000",
+                    "osVersion": "10",
+                    "manufacturer": "Bocksup",
+                    "device": "Python",
+                    "osBuildNumber": "bocksup_0.1.0"
+                }
+            }
+        }
+        
+        return json.dumps(handshake)
+        
+    @staticmethod
+    def serialize_binary_message(data: bytes) -> str:
+        """
+        Serialize binary data to a WebSocket message format.
+        
+        Args:
+            data: Binary data to serialize
+            
+        Returns:
+            A string that can be sent over WebSocket
+        """
+        # Convert binary data to base64 for WebSocket text frames
+        return base64.b64encode(data).decode('utf-8')
+        
+    @staticmethod
+    def serialize_text_message(
+        message: str, 
+        recipient: str, 
+        message_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Create a text message in the format expected by WhatsApp.
+        
+        Args:
+            message: The text message content
+            recipient: The recipient's JID
+            message_id: Optional message ID
+            
+        Returns:
+            Message dictionary ready to be encoded
+        """
+        if not message_id:
+            message_id = f"MID_{int(time.time())}_{hash(message) % 10000}"
+            
+        return {
+            "tag": message_id,
+            "type": "message",
+            "recipient": recipient,
+            "content": {
+                "type": "text",
+                "body": message
+            },
+            "timestamp": int(time.time())
+        }
+        
+    @staticmethod
+    def serialize_ack(message_id: str, recipient: str, message_type: str) -> Dict[str, Any]:
+        """
+        Create an acknowledgment message.
+        
+        Args:
+            message_id: The ID of the message being acknowledged
+            recipient: The recipient's JID
+            message_type: The type of acknowledgment
+                          (e.g., "read", "received", "played")
+            
+        Returns:
+            Ack message dictionary ready to be encoded
+        """
+        return {
+            "tag": f"ACK_{message_id}",
+            "type": "ack",
+            "recipient": recipient,
+            "content": {
+                "type": message_type,
+                "id": message_id
+            },
+            "timestamp": int(time.time())
+        }
+        
+    @staticmethod
+    def serialize_presence(presence_type: str, to: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Create a presence update message.
+        
+        Args:
+            presence_type: Type of presence (e.g., "available", "unavailable")
+            to: Optional recipient JID
+            
+        Returns:
+            Presence message dictionary ready to be encoded
+        """
+        presence = {
+            "tag": f"PRESENCE_{int(time.time())}",
+            "type": "presence",
+            "content": {
+                "type": presence_type,
+                "timestamp": int(time.time())
+            }
+        }
+        
+        if to:
+            presence["recipient"] = to
+            
+        return presence
+        
+    @staticmethod
+    def deserialize_message(message_data: Union[str, bytes]) -> Dict[str, Any]:
+        """
+        Deserialize a message received over WebSocket.
+        
+        Args:
+            message_data: The received message data
+            
+        Returns:
+            Parsed message dictionary
+            
+        Raises:
+            ParseError: If the message cannot be parsed
+        """
+        try:
+            # Handle binary data
+            if isinstance(message_data, bytes):
+                return BinaryDecoder.decode_message(message_data)
+                
+            # Handle text data (might be JSON or base64)
+            if isinstance(message_data, str):
+                # Try parsing as JSON
+                try:
+                    return json.loads(message_data)
+                except json.JSONDecodeError:
+                    # Try decoding as base64
+                    try:
+                        binary_data = base64.b64decode(message_data)
+                        return BinaryDecoder.decode_message(binary_data)
+                    except Exception as e:
+                        raise ParseError(f"Could not decode base64 data: {str(e)}")
+                        
+        except Exception as e:
+            raise ParseError(f"Failed to deserialize message: {str(e)}")
+            
+        # This should not be reached
+        raise ParseError("Unknown message format")
