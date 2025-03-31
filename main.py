@@ -76,9 +76,10 @@ def test_connection():
         # Creăm o funcție helper pentru a rula async într-un context sync
         def run_async_test():
             import asyncio
+            from bocksup.test_server_connection import test_server_connection
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(bocksup.test_server_connection(phone_number))
+            result = loop.run_until_complete(test_server_connection(phone_number))
             loop.close()
             return result
         
