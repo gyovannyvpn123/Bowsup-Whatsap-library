@@ -65,7 +65,7 @@ def debug():
     return render_template('debug.html')
 
 @app.route('/api/test_connection', methods=['POST'])
-async def test_connection():
+def test_connection():
     """API pentru testarea conexiunii la serverele WhatsApp"""
     if not BOCKSUP_AVAILABLE:
         return jsonify({"error": "Biblioteca Bocksup nu este disponibilă"}), 500
@@ -73,8 +73,17 @@ async def test_connection():
     phone_number = request.json.get('phone_number')
     
     try:
+        # Creăm o funcție helper pentru a rula async într-un context sync
+        def run_async_test():
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(bocksup.test_server_connection(phone_number))
+            loop.close()
+            return result
+        
         # Rulează testul de conexiune WhatsApp
-        result = await bocksup.test_server_connection(phone_number)
+        result = run_async_test()
         return jsonify(result)
     except Exception as e:
         logger.error(f"Eroare la testarea conexiunii: {str(e)}")
