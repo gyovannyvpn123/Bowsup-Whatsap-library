@@ -1,22 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Despre Bocksup | WhatsApp Integration Library</title>
-    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <title>About Bocksup - WhatsApp Integration Library</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Bocksup</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/about">About</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/docs">Documentation</a>
@@ -24,154 +27,104 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/examples">Examples</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/about">About</a>
-                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container py-5">
-        <h1 class="mb-5">Despre Bocksup</h1>
-        
+    <div class="container mt-5">
         <div class="row">
-            <div class="col-lg-8">
+            <div class="col-lg-8 mx-auto">
+                <h1 class="display-4 text-center mb-4">About Bocksup</h1>
+                
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h3 class="card-title">Misiunea Noastră</h3>
-                        <p class="card-text">
-                            Bocksup a fost creat ca o alternativă îmbunătățită la biblioteca yowsup, cu obiectivul de a oferi o soluție mai stabilă, 
-                            mai fiabilă și mai modernă pentru integrarea WhatsApp în aplicațiile Python.
-                        </p>
-                        <p class="card-text">
-                            Ne concentrăm pe furnizarea unei biblioteci care să fie:
-                        </p>
+                        <h2>Project Overview</h2>
+                        <p>Bocksup is a Python library that replicates the functionality of yowsup for WhatsApp integration. It provides a complete implementation of the WhatsApp protocol with several key improvements:</p>
                         <ul>
-                            <li><strong>Robustă:</strong> Cu o gestionare superioară a erorilor și recuperare din situații neprevăzute</li>
-                            <li><strong>Modernă:</strong> Utilizând cele mai bune practici Python și tipuri de date moderne</li>
-                            <li><strong>Ușor de utilizat:</strong> Cu o interfață intuitivă și documentație clară</li>
-                            <li><strong>Securizată:</strong> Implementând toate protocoalele de securitate necesare</li>
-                            <li><strong>Extensibilă:</strong> Cu o arhitectură modulară ce permite personalizare și extindere ușoară</li>
+                            <li>Modern Python (3.8+) compatibility</li>
+                            <li>Asynchronous API using asyncio</li>
+                            <li>Improved stability and error handling</li>
+                            <li>Complete Signal protocol implementation for secure messaging</li>
+                            <li>Better documentation and examples</li>
                         </ul>
                     </div>
                 </div>
-                
+
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h3 class="card-title">De ce Bocksup vs. yowsup?</h3>
-                        <p class="card-text">
-                            Deși yowsup a fost o bibliotecă pionier pentru integrarea WhatsApp în Python, a întâmpinat 
-                            câteva probleme care au motivat crearea Bocksup:
-                        </p>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Problemă în yowsup</th>
-                                        <th>Îmbunătățire în Bocksup</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Compatibilitate redusă cu Python modern (3.6+)</td>
-                                        <td>Dezvoltat special pentru Python 3.8+ cu suport complet pentru tipuri</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Gestionarea deficitară a erorilor și a excepțiilor</td>
-                                        <td>Sistem robust de gestionare a erorilor cu mesaje clare și strategii de recuperare</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Întreținere redusă a codului sursă</td>
-                                        <td>Cod bine organizat și documentat cu teste comprehensive</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Suport limitat pentru funcționalități WhatsApp noi</td>
-                                        <td>Arhitectură modulară concepută pentru integrarea ușoară a noilor funcționalități</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Dependențe învechite și probleme de securitate</td>
-                                        <td>Dependențe moderne și actualizate cu focus pe securitate</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h3 class="card-title">Detalii Proiect</h3>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Versiune:</span>
-                                <span>0.1.0</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Licență:</span>
-                                <span>MIT</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Python:</span>
-                                <span>3.8+</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>GitHub:</span>
-                                <a href="https://github.com/bocksup/bocksup">bocksup/bocksup</a>
-                            </li>
+                        <h2>Architecture</h2>
+                        <p>Bocksup uses a layered architecture similar to the original yowsup library:</p>
+                        
+                        <h5>Core Layers:</h5>
+                        <ul>
+                            <li><strong>Network Layer</strong> - Handles WebSocket connections to WhatsApp servers</li>
+                            <li><strong>Protocol Layer</strong> - Implements the WhatsApp message protocol</li>
+                            <li><strong>Axolotl Layer</strong> - Implements the Signal protocol for encryption</li>
+                            <li><strong>Interface Layer</strong> - Provides a high-level API for applications</li>
+                        </ul>
+
+                        <h5>Service Modules:</h5>
+                        <ul>
+                            <li><strong>Authentication</strong> - Handles WhatsApp authentication</li>
+                            <li><strong>Messaging</strong> - Manages sending and receiving messages</li>
+                            <li><strong>Media</strong> - Processes media uploads and downloads</li>
+                            <li><strong>Groups</strong> - Handles WhatsApp group operations</li>
+                            <li><strong>Registration</strong> - Manages device registration</li>
                         </ul>
                     </div>
                 </div>
-                
+
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h3 class="card-title">Tehnologii</h3>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="badge bg-primary">Python</span>
-                            <span class="badge bg-primary">WhatsApp Protocol</span>
-                            <span class="badge bg-primary">WebSockets</span>
-                            <span class="badge bg-primary">Axolotl/Signal</span>
-                            <span class="badge bg-primary">End-to-End Encryption</span>
-                            <span class="badge bg-primary">asyncio</span>
-                            <span class="badge bg-primary">Type Hints</span>
-                            <span class="badge bg-primary">SSL/TLS</span>
+                        <h2>Development Status</h2>
+                        <p>Bocksup is currently in alpha development. The base architecture and module structure are implemented, but some components are still being developed:</p>
+                        
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" style="width: 60%;" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">60%</div>
+                        </div>
+                        
+                        <h5>Completed:</h5>
+                        <ul>
+                            <li>Library architecture and structure</li>
+                            <li>WebSocket connection handling</li>
+                            <li>Basic protocol implementation</li>
+                            <li>Basic Signal protocol implementation</li>
+                        </ul>
+                        
+                        <h5>In Progress:</h5>
+                        <ul>
+                            <li>Full Signal protocol implementation</li>
+                            <li>Authentication and registration</li>
+                            <li>Media handling</li>
+                            <li>Group chat support</li>
+                        </ul>
+
+                        <div class="alert alert-info mt-3">
+                            <h5>Current Limitations</h5>
+                            <p>The library is currently not fully functional with real WhatsApp servers. It requires further testing and protocol adaptation with real servers.</p>
+                            <p>See the <a href="/docs" class="alert-link">documentation</a> for details on how to help complete the implementation.</p>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-body">
-                        <h3 class="card-title">Contribuie</h3>
-                        <p class="card-text">
-                            Suntem deschiși contribuțiilor! Dacă dorești să contribui la Bocksup, 
-                            ne poți găsi pe GitHub.
-                        </p>
-                        <a href="https://github.com/bocksup/bocksup" class="btn btn-primary w-100">
-                            Contribuie pe GitHub
-                        </a>
+                        <h2>Legal Notice</h2>
+                        <p>Bocksup is not affiliated with, authorized, maintained, sponsored or endorsed by WhatsApp Inc. or any of its affiliates or subsidiaries. This is an independent and unofficial library.</p>
+                        <p>Using this library to access WhatsApp's service should be done in compliance with their Terms of Service.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Bocksup</h5>
-                    <p>O bibliotecă Python pentru integrarea WhatsApp</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Licență: MIT</p>
-                    <p>Versiune: 0.1.0</p>
-                </div>
-            </div>
+    <footer class="mt-5 py-3 bg-dark">
+        <div class="container text-center">
+            <p class="text-light mb-0">Bocksup v0.2.0 | MIT License | Not affiliated with WhatsApp Inc.</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

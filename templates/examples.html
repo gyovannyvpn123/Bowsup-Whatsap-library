@@ -1,32 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exemple Bocksup | WhatsApp Integration Library</title>
-    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-    <style>
-        .code-block {
-            background-color: var(--bs-dark);
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-        pre {
-            margin-bottom: 0;
-        }
-    </style>
+    <title>Examples - Bocksup WhatsApp Library</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Bocksup</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">About</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/docs">Documentation</a>
@@ -34,506 +27,525 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="/examples">Examples</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/about">About</a>
-                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container py-5">
-        <h1 class="mb-5">Exemple de Utilizare Bocksup</h1>
-        
-        <div class="row mb-5">
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">🤖 Echo Bot</h3>
-                        <p class="card-text">Un bot simplu care răspunde la mesaje returnând exact ce a primit.</p>
-                        <a href="#echo-bot" class="btn btn-primary">Vezi exemplul</a>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <h1 class="display-4 text-center mb-4">Examples</h1>
+                
+                <div class="alert alert-info mb-4">
+                    <p class="mb-0"><strong>Note:</strong> These examples demonstrate the intended API usage. Complete WhatsApp server functionality requires the implementation steps detailed in the documentation.</p>
+                </div>
+                
+                <!-- Basic Echo Bot Example -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">Basic Echo Bot</h3>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">💬 CLI Interactiv</h3>
-                        <p class="card-text">O interfață în linie de comandă pentru trimiterea și primirea mesajelor.</p>
-                        <a href="#cli-example" class="btn btn-primary">Vezi exemplul</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">🌐 Notificări Web</h3>
-                        <p class="card-text">Integrează WhatsApp cu o aplicație web pentru notificări.</p>
-                        <a href="#web-notifications" class="btn btn-primary">Vezi exemplul</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">📊 Data Logger</h3>
-                        <p class="card-text">Un sistem de jurnalizare a datelor către și de la WhatsApp.</p>
-                        <a href="#data-logger" class="btn btn-primary">Vezi exemplul</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">📱 Înregistrare</h3>
-                        <p class="card-text">Exemplu de înregistrare și verificare a unui număr de telefon nou.</p>
-                        <a href="#registration" class="btn btn-primary">Vezi exemplul</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">👥 Manager Grupuri</h3>
-                        <p class="card-text">Creare și administrare grupuri WhatsApp.</p>
-                        <a href="#group-manager" class="btn btn-primary">Vezi exemplul</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <section id="echo-bot" class="mb-5">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="mb-0">Echo Bot</h2>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Acest exemplu arată cum să construiești un bot simplu care răspunde automat la mesajele primite, 
-                        returnând exact același mesaj către expeditor.
-                    </p>
-                    <div class="code-block mb-4">
-                        <pre><code>#!/usr/bin/env python3
-"""
-Echo example for Bocksup.
+                    <div class="card-body">
+                        <p>A simple bot that echoes back any received message:</p>
+                        <pre class="bg-dark text-light p-3 rounded"><code>"""
+Basic echo bot example using Bocksup.
 
-This example demonstrates a simple WhatsApp echo bot using Bocksup.
-It connects to WhatsApp, listens for incoming messages, and echoes them back.
+This bot connects to WhatsApp and echoes back any received message.
 """
 
-import os
-import sys
 import asyncio
 import logging
-import argparse
-from typing import Dict, Any, Tuple
-
-# Add parent directory to path to import bocksup
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import bocksup
-from bocksup.messaging.messages import TextMessage, MediaMessage
-from bocksup.stack.builder import StackBuilder
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('bocksup.echo')
-
-class EchoBot:
-    """Simple WhatsApp echo bot using Bocksup."""
-    
-    def __init__(self, phone_number: str, password: str):
-        """
-        Initialize the echo bot.
-        
-        Args:
-            phone_number: WhatsApp phone number
-            password: WhatsApp password
-        """
-        self.phone_number = phone_number
-        self.password = password
-        self.stack = None
-        self.running = False
-        
-    async def start(self) -> None:
-        """Start the echo bot."""
-        logger.info("Starting echo bot")
-        
-        # Create stack builder
-        builder = StackBuilder()
-        
-        # Set message handler
-        builder.set_message_handler(self.handle_message)
-        
-        # Build the stack
-        self.stack = builder.build((self.phone_number, self.password))
-        
-        # Connect to WhatsApp
-        if not await self.stack.connect():
-            logger.error("Failed to connect to WhatsApp")
-            return
-            
-        # Authenticate
-        if not await self.stack.authenticate():
-            logger.error("Failed to authenticate with WhatsApp")
-            await self.stack.disconnect()
-            return
-            
-        logger.info("Echo bot started and connected to WhatsApp")
-        
-        # Set running flag
-        self.running = True
-        
-        # Keep the bot running until stopped
-        try:
-            while self.running:
-                await asyncio.sleep(1)
-        except asyncio.CancelledError:
-            logger.info("Echo bot task cancelled")
-        finally:
-            await self.stop()
-            
-    async def stop(self) -> None:
-        """Stop the echo bot."""
-        logger.info("Stopping echo bot")
-        
-        if self.stack:
-            await self.stack.disconnect()
-            
-        self.running = False
-        logger.info("Echo bot stopped")
-        
-    async def handle_message(self, message_data: Dict[str, Any]) -> None:
-        """
-        Handle incoming WhatsApp messages.
-        
-        Args:
-            message_data: Message data dictionary
-        """
-        try:
-            # Extract message details
-            message_type = message_data.get('type')
-            
-            if message_type == 'text':
-                await self.handle_text_message(message_data)
-            elif message_type == 'media':
-                await self.handle_media_message(message_data)
-            else:
-                logger.info(f"Received unsupported message type: {message_type}")
-                
-        except Exception as e:
-            logger.error(f"Error handling message: {str(e)}")
-            
-    async def handle_text_message(self, message_data: Dict[str, Any]) -> None:
-        """
-        Handle text messages.
-        
-        Args:
-            message_data: Text message data
-        """
-        # Extract message details
-        from_jid = message_data.get('from')
-        body = message_data.get('body', '')
-        
-        if not from_jid or not body:
-            return
-            
-        logger.info(f"Received text message from {from_jid}: {body}")
-        
-        # Prepare echo response
-        echo_text = f"Echo: {body}"
-        
-        # Create response message
-        response = {
-            'type': 'text',
-            'to': from_jid,
-            'body': echo_text
-        }
-        
-        # Send echo response
-        if await self.stack.send_message(response):
-            logger.info(f"Sent echo response to {from_jid}")
-        else:
-            logger.error(f"Failed to send echo response to {from_jid}")
-            
-    async def handle_media_message(self, message_data: Dict[str, Any]) -> None:
-        """
-        Handle media messages.
-        
-        Args:
-            message_data: Media message data
-        """
-        # Extract message details
-        from_jid = message_data.get('from')
-        media_type = message_data.get('media_type')
-        
-        if not from_jid:
-            return
-            
-        logger.info(f"Received media message from {from_jid}, type: {media_type}")
-        
-        # Prepare echo response for media
-        response = {
-            'type': 'text',
-            'to': from_jid,
-            'body': f"Received your {media_type} media. Sorry, I can't echo media files yet."
-        }
-        
-        # Send echo response
-        if await self.stack.send_message(response):
-            logger.info(f"Sent media acknowledgment to {from_jid}")
-        else:
-            logger.error(f"Failed to send media acknowledgment to {from_jid}")
-
-async def main():
-    """Main function to run the echo bot."""
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Bocksup Echo Bot Example')
-    parser.add_argument('phone', help='Phone number (with country code)')
-    parser.add_argument('password', help='WhatsApp password')
-    args = parser.parse_args()
-    
-    # Create and start the echo bot
-    bot = EchoBot(args.phone, args.password)
-    try:
-        await bot.start()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, stopping bot")
-    finally:
-        await bot.stop()
-
-if __name__ == '__main__':
-    asyncio.run(main())</code></pre>
-                    </div>
-                    <p>
-                        Pentru a rula acest exemplu, salvează codul într-un fișier numit <code>echo_bot.py</code> și execută:
-                    </p>
-                    <div class="code-block">
-                        <pre><code>python echo_bot.py YOUR_PHONE_NUMBER YOUR_PASSWORD</code></pre>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <section id="cli-example" class="mb-5">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="mb-0">CLI Interactiv</h2>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Interfața în linie de comandă (CLI) permite utilizatorului să trimită și să primească mesaje WhatsApp 
-                        interactiv prin intermediul terminalului.
-                    </p>
-                    <p>
-                        Codul complet este disponibil în exemplul din distribuția bibliotecii Bocksup, iată un extras:
-                    </p>
-                    <div class="code-block mb-4">
-                        <pre><code>class BocksupCLI:
-    """Command-line interface for interacting with WhatsApp using Bocksup."""
-    
-    def __init__(self):
-        """Initialize the CLI."""
-        self.stack = None
-        self.message_history = []
-        self.commands = {
-            'exit': self.cmd_exit,
-            'help': self.cmd_help,
-            'send': self.cmd_send,
-            'status': self.cmd_status,
-            'history': self.cmd_history,
-            'register': self.cmd_register
-        }
-        
-    async def start(self, phone_number: str, password: str) -> None:
-        """
-        Start the CLI.
-        
-        Args:
-            phone_number: WhatsApp phone number
-            password: WhatsApp password
-        """
-        print(f"Starting Bocksup CLI with phone number {phone_number}")
-        
-        # Create stack builder
-        builder = StackBuilder()
-        
-        # Set event handlers
-        builder.set_message_handler(self.handle_message)
-        builder.set_receipt_handler(self.handle_receipt)
-        builder.set_presence_handler(self.handle_presence)
-        builder.set_disconnect_handler(self.handle_disconnect)
-        
-        # Build the stack
-        self.stack = builder.build((phone_number, password))
-        
-        # Connect to WhatsApp
-        if not await self.stack.connect():
-            print("Failed to connect to WhatsApp")
-            return
-            
-        # Authenticate
-        if not await self.stack.authenticate():
-            print("Failed to authenticate with WhatsApp")
-            await self.stack.disconnect()
-            return
-            
-        print("Successfully connected and authenticated to WhatsApp")
-        print("Type 'help' for a list of commands")
-        
-        # Start command loop
-        await self.command_loop()
-        
-    async def command_loop(self) -> None:
-        """Run the command loop."""
-        while True:
-            try:
-                # Get user input asynchronously
-                user_input = await ainput("> ")
-                
-                if not user_input:
-                    continue
-                    
-                parts = user_input.split(maxsplit=1)
-                command = parts[0].lower()
-                args = parts[1] if len(parts) > 1 else ""
-                
-                if command in self.commands:
-                    # Call the appropriate command handler
-                    if asyncio.iscoroutinefunction(self.commands[command]):
-                        await self.commands[command](args)
-                    else:
-                        self.commands[command](args)
-                else:
-                    print(f"Unknown command: {command}. Type 'help' for available commands.")
-                    
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                print(f"Error processing command: {str(e)}")
-                
-    async def cmd_send(self, args: str) -> None:
-        """
-        Handle the send command.
-        
-        Args:
-            args: Command arguments
-        """
-        if not args:
-            print("Usage: send <phone_number> <message>")
-            return
-            
-        # Parse arguments
-        parts = args.split(maxsplit=1)
-        if len(parts) < 2:
-            print("Usage: send <phone_number> <message>")
-            return
-            
-        to_number = parts[0]
-        message_text = parts[1]
-        
-        # Send the message
-        message = {
-            'type': 'text',
-            'to': to_number,
-            'body': message_text
-        }
-        
-        if await self.stack.send_message(message):
-            print(f"Message sent to {to_number}")
-        else:
-            print(f"Failed to send message to {to_number}")
-
-# ... rest of the implementation</code></pre>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- More example sections would continue here -->
-        
-        <section id="registration" class="mb-5">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="mb-0">Înregistrare Număr</h2>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Exemplul următor demonstrează cum să înregistrezi un număr nou de telefon pentru utilizare cu WhatsApp.
-                    </p>
-                    <div class="code-block mb-4">
-                        <pre><code>import asyncio
-import logging
-from bocksup.registration.client import RegistrationClient
+from bocksup import create_client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('registration')
+logger = logging.getLogger("echo_bot")
 
-async def register_number():
-    # Create registration client
-    registration = RegistrationClient()
+# WhatsApp credentials
+PHONE_NUMBER = "your_phone_number"  # e.g., "12025550108"
+PASSWORD = "your_password"          # Optional, if not provided QR auth will be used
+
+async def main():
+    # Create client
+    client = create_client(PHONE_NUMBER, PASSWORD)
     
-    # Start the registration process with a phone number
-    phone_number = input("Enter phone number (with country code, e.g., 401234567): ")
+    # Register message handler
+    client.register_message_handler(message_handler)
     
-    # Request SMS verification
-    logger.info(f"Requesting verification code for {phone_number}")
-    result = await registration.request_code(phone_number, method="sms")
-    
-    if not result['success']:
-        logger.error(f"Failed to request code: {result['reason']}")
-        return
-    
-    logger.info("Verification code requested successfully. Check your SMS messages.")
-    
-    # Get the verification code from user
-    code = input("Enter the verification code received: ")
-    
-    # Verify the code
-    logger.info(f"Verifying code: {code}")
-    result = await registration.register_code(phone_number, code)
-    
-    if not result['success']:
-        logger.error(f"Failed to verify code: {result['reason']}")
-        return
-    
-    # Successfully registered
-    logger.info("Registration successful!")
-    logger.info(f"Your WhatsApp password: {result['password']}")
-    logger.info("Save this password securely. You will need it to connect to WhatsApp.")
+    # Connect to WhatsApp
+    try:
+        logger.info("Connecting to WhatsApp...")
+        connected = await client.connect()
+        
+        if connected:
+            logger.info("Connected to WhatsApp!")
+            
+            # Keep the connection alive
+            while True:
+                await asyncio.sleep(60)
+                
+    except Exception as e:
+        logger.error(f"Error: {e}")
+    finally:
+        # Disconnect when done
+        await client.disconnect()
+        logger.info("Disconnected from WhatsApp")
+
+async def message_handler(message_data):
+    """Handle incoming messages by echoing them back."""
+    if 'text' in message_data and message_data.get('type') == 'text':
+        sender = message_data.get('from')
+        text = message_data.get('text')
+        
+        logger.info(f"Message from {sender}: {text}")
+        
+        # Echo the message back
+        if sender:
+            reply_text = f"You said: {text}"
+            await client.send_text_message(sender, reply_text)
+            logger.info(f"Sent echo reply to {sender}")
 
 if __name__ == "__main__":
-    asyncio.run(register_number())</code></pre>
-                    </div>
-                    <div class="alert alert-warning">
-                        <strong>Important:</strong> Înregistrarea unui număr necesită acces la numărul de telefon respectiv
-                        pentru a primi mesajul SMS sau apelul de verificare. Utilizează acest exemplu doar cu numere de telefon 
-                        care îți aparțin.
+    asyncio.run(main())</code></pre>
                     </div>
                 </div>
-            </div>
-        </section>
-    </div>
+                
+                <!-- WhatsApp Bot with Commands -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">WhatsApp Bot with Commands</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>A more advanced bot that responds to specific commands:</p>
+                        <pre class="bg-dark text-light p-3 rounded"><code>"""
+Command-based WhatsApp bot example using Bocksup.
 
-    <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Bocksup</h5>
-                    <p>O bibliotecă Python pentru integrarea WhatsApp</p>
+This bot handles specific commands like:
+- !help - Show help message
+- !time - Display the current time
+- !echo [text] - Echo back text
+"""
+
+import asyncio
+import logging
+import time
+from datetime import datetime
+from bocksup import create_client
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("command_bot")
+
+# WhatsApp credentials
+PHONE_NUMBER = "your_phone_number"
+PASSWORD = None  # Use QR code authentication
+
+# Bot commands
+COMMANDS = {
+    "!help": "Show this help message",
+    "!time": "Show the current time",
+    "!echo": "Echo back the text after the command"
+}
+
+async def main():
+    # Create client
+    client = create_client(PHONE_NUMBER, PASSWORD)
+    
+    # Register handlers
+    client.register_message_handler(message_handler)
+    
+    # Connect to WhatsApp
+    try:
+        logger.info("Connecting to WhatsApp...")
+        connected = await client.connect()
+        
+        if connected:
+            logger.info("Connected to WhatsApp!")
+            
+            # Keep the connection alive
+            while True:
+                await asyncio.sleep(60)
+                
+    except Exception as e:
+        logger.error(f"Error: {e}")
+    finally:
+        # Disconnect when done
+        await client.disconnect()
+        logger.info("Disconnected from WhatsApp")
+
+async def message_handler(message_data):
+    """Handle incoming messages and process commands."""
+    if 'text' in message_data and message_data.get('type') == 'text':
+        sender = message_data.get('from')
+        text = message_data.get('text', '').strip()
+        
+        if not sender:
+            return
+            
+        # Process commands
+        if text.startswith('!'):
+            await process_command(sender, text)
+        
+async def process_command(sender, text):
+    """Process bot commands."""
+    parts = text.split(' ', 1)
+    command = parts[0].lower()
+    args = parts[1] if len(parts) > 1 else ''
+    
+    if command == '!help':
+        # Send help message
+        help_text = "Available commands:\\n"
+        for cmd, desc in COMMANDS.items():
+            help_text += f"{cmd} - {desc}\\n"
+        await client.send_text_message(sender, help_text)
+        
+    elif command == '!time':
+        # Send current time
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await client.send_text_message(sender, f"Current time: {now}")
+        
+    elif command == '!echo':
+        # Echo back the text
+        if args:
+            await client.send_text_message(sender, args)
+        else:
+            await client.send_text_message(sender, "Echo what? Use !echo [text]")
+            
+    else:
+        # Unknown command
+        await client.send_text_message(
+            sender, 
+            f"Unknown command: {command}\\nType !help for available commands"
+        )
+
+# Global client instance
+client = None
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+                    </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Licență: MIT</p>
-                    <p>Versiune: 0.1.0</p>
+                
+                <!-- Group Management Example -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">Group Management</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Managing WhatsApp groups with Bocksup:</p>
+                        <pre class="bg-dark text-light p-3 rounded"><code>"""
+WhatsApp group management example using Bocksup.
+
+This example demonstrates:
+- Creating groups
+- Adding participants
+- Sending messages to groups
+- Handling group events
+"""
+
+import asyncio
+import logging
+from bocksup import create_client
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("group_manager")
+
+# WhatsApp credentials
+PHONE_NUMBER = "your_phone_number"
+PASSWORD = "your_password"
+
+# Example group data
+GROUP_NAME = "Bocksup Test Group"
+PARTICIPANTS = [
+    "1234567890",  # Replace with actual phone numbers
+    "0987654321"
+]
+
+async def main():
+    # Create client
+    client = create_client(PHONE_NUMBER, PASSWORD)
+    
+    # Register handlers
+    client.register_message_handler(message_handler)
+    client.register_group_notification_handler(group_notification_handler)
+    
+    # Connect to WhatsApp
+    try:
+        logger.info("Connecting to WhatsApp...")
+        connected = await client.connect()
+        
+        if connected:
+            logger.info("Connected to WhatsApp!")
+            
+            # Create a new group
+            group_id = await create_test_group(client)
+            
+            # Send welcome message
+            if group_id:
+                await client.send_text_message(
+                    group_id, 
+                    "Welcome to the Bocksup test group!"
+                )
+            
+            # Keep the connection alive
+            while True:
+                await asyncio.sleep(60)
+                
+    except Exception as e:
+        logger.error(f"Error: {e}")
+    finally:
+        # Disconnect when done
+        await client.disconnect()
+        logger.info("Disconnected from WhatsApp")
+
+async def create_test_group(client):
+    """Create a test group and add participants."""
+    try:
+        # Create the group
+        logger.info(f"Creating group: {GROUP_NAME}")
+        group_id = await client.create_group(GROUP_NAME, PARTICIPANTS)
+        logger.info(f"Group created with ID: {group_id}")
+        
+        # Add more participants if needed
+        # await client.add_participant_to_group(group_id, "5551234567")
+        
+        return group_id
+    except Exception as e:
+        logger.error(f"Failed to create group: {e}")
+        return None
+
+async def message_handler(message_data):
+    """Handle incoming messages."""
+    if message_data.get('is_group') and 'text' in message_data:
+        group_id = message_data.get('from')
+        sender = message_data.get('participant')
+        text = message_data.get('text')
+        
+        logger.info(f"Group message from {sender} in group {group_id}: {text}")
+        
+        # You can respond to specific group messages here
+
+async def group_notification_handler(notification_data):
+    """Handle group notifications (joins, leaves, etc.)."""
+    group_id = notification_data.get('group_id')
+    notification_type = notification_data.get('type')
+    
+    if notification_type == 'add':
+        # Someone was added to the group
+        added_by = notification_data.get('author')
+        participants = notification_data.get('participants', [])
+        
+        logger.info(f"New participants added to group {group_id} by {added_by}: {participants}")
+        
+    elif notification_type == 'remove':
+        # Someone was removed from the group
+        removed_by = notification_data.get('author')
+        participants = notification_data.get('participants', [])
+        
+        logger.info(f"Participants removed from group {group_id} by {removed_by}: {participants}")
+        
+    elif notification_type == 'subject':
+        # Group subject was changed
+        changed_by = notification_data.get('author')
+        new_subject = notification_data.get('subject')
+        
+        logger.info(f"Group {group_id} subject changed to '{new_subject}' by {changed_by}")
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+                    </div>
+                </div>
+                
+                <!-- Media Handling Example -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="mb-0">Media Handling</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Handling media files with Bocksup:</p>
+                        <pre class="bg-dark text-light p-3 rounded"><code>"""
+Media handling example using Bocksup.
+
+This example demonstrates:
+- Sending images, audio, and video
+- Receiving and downloading media
+- Processing received media files
+"""
+
+import asyncio
+import logging
+import os
+from bocksup import create_client
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("media_handler")
+
+# WhatsApp credentials
+PHONE_NUMBER = "your_phone_number"
+PASSWORD = "your_password"
+
+# Recipient for media messages
+RECIPIENT = "recipient_number"  # Replace with actual number
+
+# Media paths (replace with actual file paths)
+IMAGE_PATH = "example_image.jpg"
+AUDIO_PATH = "example_audio.mp3"
+VIDEO_PATH = "example_video.mp4"
+
+# Directory for downloaded media
+DOWNLOAD_DIR = "received_media/"
+
+async def main():
+    # Create client
+    client = create_client(PHONE_NUMBER, PASSWORD)
+    
+    # Register handlers
+    client.register_message_handler(message_handler)
+    
+    # Create download directory if it doesn't exist
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    
+    # Connect to WhatsApp
+    try:
+        logger.info("Connecting to WhatsApp...")
+        connected = await client.connect()
+        
+        if connected:
+            logger.info("Connected to WhatsApp!")
+            
+            # Send example media files
+            await send_example_media(client)
+            
+            # Keep the connection alive
+            while True:
+                await asyncio.sleep(60)
+                
+    except Exception as e:
+        logger.error(f"Error: {e}")
+    finally:
+        # Disconnect when done
+        await client.disconnect()
+        logger.info("Disconnected from WhatsApp")
+
+async def send_example_media(client):
+    """Send example media files."""
+    try:
+        # Send image
+        if os.path.exists(IMAGE_PATH):
+            logger.info(f"Sending image: {IMAGE_PATH}")
+            await client.send_image(
+                RECIPIENT, 
+                IMAGE_PATH, 
+                caption="Test image from Bocksup"
+            )
+        
+        # Send audio
+        if os.path.exists(AUDIO_PATH):
+            logger.info(f"Sending audio: {AUDIO_PATH}")
+            await client.send_voice_note(RECIPIENT, AUDIO_PATH)
+        
+        # Send video
+        if os.path.exists(VIDEO_PATH):
+            logger.info(f"Sending video: {VIDEO_PATH}")
+            await client.send_video(
+                RECIPIENT, 
+                VIDEO_PATH, 
+                caption="Test video from Bocksup"
+            )
+    except Exception as e:
+        logger.error(f"Failed to send media: {e}")
+
+async def message_handler(message_data):
+    """Handle incoming messages, especially media messages."""
+    message_type = message_data.get('type')
+    sender = message_data.get('from')
+    
+    if not sender:
+        return
+        
+    # Handle different types of media
+    if message_type in ['image', 'audio', 'video', 'document']:
+        await handle_media_message(message_data)
+    elif message_type == 'text':
+        text = message_data.get('text', '')
+        logger.info(f"Text message from {sender}: {text}")
+        
+        # If the message is asking for media, send an example
+        if 'send me a photo' in text.lower():
+            if os.path.exists(IMAGE_PATH):
+                await client.send_image(sender, IMAGE_PATH, caption="Here's your requested photo")
+        
+async def handle_media_message(message_data):
+    """Process a received media message."""
+    message_type = message_data.get('type')
+    sender = message_data.get('from')
+    media_url = message_data.get('media_url')
+    
+    if not media_url:
+        return
+        
+    try:
+        # Download the media
+        file_path = os.path.join(DOWNLOAD_DIR, f"{message_data.get('id')}.{get_extension(message_type)}")
+        
+        logger.info(f"Downloading {message_type} from {sender} to {file_path}")
+        
+        await client.download_media(message_data, file_path)
+        
+        logger.info(f"Downloaded {message_type} to {file_path}")
+        
+        # Process the media based on type
+        if message_type == 'image':
+            # You could process images here (resize, apply filters, etc.)
+            # For example: process_image(file_path)
+            await client.send_text_message(sender, "I received your image!")
+            
+        elif message_type == 'audio':
+            # You could process audio here (transcribe, analyze, etc.)
+            # For example: transcribe_audio(file_path)
+            await client.send_text_message(sender, "I received your audio!")
+            
+        elif message_type == 'video':
+            # You could process video here
+            await client.send_text_message(sender, "I received your video!")
+            
+        elif message_type == 'document':
+            # You could process documents here
+            await client.send_text_message(sender, "I received your document!")
+            
+    except Exception as e:
+        logger.error(f"Failed to process media message: {e}")
+
+def get_extension(message_type):
+    """Get file extension based on message type."""
+    extensions = {
+        'image': 'jpg',
+        'audio': 'mp3',
+        'video': 'mp4',
+        'document': 'pdf'
+    }
+    return extensions.get(message_type, 'bin')
+
+# Global client instance
+client = None
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-dark">
+        <div class="container text-center">
+            <p class="text-light mb-0">Bocksup v0.2.0 | MIT License | Not affiliated with WhatsApp Inc.</p>
+        </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

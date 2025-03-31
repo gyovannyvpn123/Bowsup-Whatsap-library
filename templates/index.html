@@ -1,33 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bocksup: WhatsApp Integration Library</title>
-    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-    <style>
-        .feature-icon {
-            font-size: 2rem;
-            color: var(--bs-info);
-        }
-        .code-block {
-            background-color: var(--bs-dark);
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-    </style>
+    <title>Bocksup - WhatsApp Integration Library</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Bocksup</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">About</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/docs">Documentation</a>
@@ -35,244 +27,147 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/examples">Examples</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/about">About</a>
-                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <header class="text-center py-5">
-            <h1 class="display-4">Bocksup</h1>
-            <p class="lead">O alternativă îmbunătățită la yowsup pentru integrarea WhatsApp cu stabilitate și gestionare a erorilor superioare</p>
-            <div class="d-flex justify-content-center gap-3 mt-4">
-                <a href="/docs" class="btn btn-primary">Începe</a>
-                <a href="https://github.com/bocksup/bocksup" class="btn btn-outline-light">Vezi pe GitHub</a>
-            </div>
-        </header>
-
-        <section class="py-5">
-            <div class="row">
-                <div class="col-md-6">
-                    <h2>Ce este Bocksup?</h2>
-                    <p>
-                        Bocksup este o bibliotecă Python care replică funcționalitatea de integrare WhatsApp a yowsup, dar cu stabilitate îmbunătățită, gestionare mai bună a erorilor și compatibilitate cu Python modern.
-                    </p>
-                    <p>
-                        Această bibliotecă oferă o implementare completă a protocolului WhatsApp, permițându-vă să construiți aplicații care pot trimite și primi mesaje, gestiona media, participa la chat-uri de grup și multe altele.
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <div class="code-block">
-                        <pre><code>#!/usr/bin/env python3
-import bocksup
-
-# Creează un stack cu credențiale
-stack = bocksup.create_stack(
-    credentials=("număr_telefon", "parolă"),
-    encryption_enabled=True
-)
-
-# Conectare și autentificare
-await stack.connect()
-await stack.authenticate()
-
-# Trimite un mesaj
-await stack.send_message({
-    "type": "text",
-    "to": "1234567890",
-    "body": "Salut de la Bocksup!"
-})</code></pre>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-5">
-            <h2 class="text-center mb-5">Caracteristici Principale</h2>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <div class="feature-icon mb-3">
-                                <i class="bi bi-shield-lock"></i>
-                                🔒
-                            </div>
-                            <h3 class="card-title h5">Criptare End-to-End</h3>
-                            <p class="card-text">Mesagerie securizată cu protocolul Signal (Axolotl) pentru criptare end-to-end.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <div class="feature-icon mb-3">
-                                <i class="bi bi-chat-dots"></i>
-                                💬
-                            </div>
-                            <h3 class="card-title h5">Mesagerie Completă</h3>
-                            <p class="card-text">Suport pentru toate tipurile de mesaje, inclusiv text, media, locație și contacte.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <div class="feature-icon mb-3">
-                                <i class="bi bi-people"></i>
-                                👥
-                            </div>
-                            <h3 class="card-title h5">Gestionare Grupuri</h3>
-                            <p class="card-text">Creează și gestionează grupuri, adaugă/elimină participanți și modifică setările grupului.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <div class="feature-icon mb-3">
-                                <i class="bi bi-image"></i>
-                                🖼️
-                            </div>
-                            <h3 class="card-title h5">Gestionare Media</h3>
-                            <p class="card-text">Încarcă și descarcă imagini, videoclipuri, fișiere audio și documente.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <div class="feature-icon mb-3">
-                                <i class="bi bi-layers"></i>
-                                🧱
-                            </div>
-                            <h3 class="card-title h5">Arhitectură Stratificată</h3>
-                            <p class="card-text">Arhitectură modulară, stratificată pentru flexibilitate și extensibilitate.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <div class="feature-icon mb-3">
-                                <i class="bi bi-phone"></i>
-                                📱
-                            </div>
-                            <h3 class="card-title h5">Înregistrare</h3>
-                            <p class="card-text">Înregistrează conturi noi WhatsApp și verifică numere de telefon.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-5">
-            <h2 class="text-center mb-5">Starea Bibliotecii</h2>
-            <div class="card">
-                <div class="card-body">
-                    <div id="library-status">
-                        <div class="d-flex justify-content-center">
-                            <div class="spinner-border text-info" role="status">
-                                <span class="visually-hidden">Se încarcă...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Bocksup</h5>
-                    <p>O bibliotecă Python pentru integrarea WhatsApp</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Licență: MIT</p>
-                    <p>Versiune: 0.1.0</p>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h1 class="display-4">Bocksup</h1>
+                <p class="lead mb-4">A Python library that replicates yowsup's WhatsApp integration functionality with improved stability, error handling, and modern Python compatibility.</p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="/docs" class="btn btn-primary btn-lg px-4 gap-3">Documentation</a>
+                    <a href="/examples" class="btn btn-outline-secondary btn-lg px-4">Examples</a>
                 </div>
             </div>
         </div>
+
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Modern Python Support</h5>
+                        <p class="card-text">Compatible with Python 3.8+ and leverages modern language features and async patterns.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Signal Protocol Encryption</h5>
+                        <p class="card-text">Implements the Signal Protocol for secure end-to-end encrypted messaging.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Improved Error Handling</h5>
+                        <p class="card-text">Robust error handling and recovery mechanisms for more stable applications.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6 offset-md-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Library Status
+                    </div>
+                    <div class="card-body">
+                        <div id="library-info-loading">Loading library information...</div>
+                        <div id="library-info" class="d-none">
+                            <p><strong>Version:</strong> <span id="library-version"></span></p>
+                            <p><strong>Available Features:</strong></p>
+                            <ul id="library-features"></ul>
+                        </div>
+                        <div id="library-error" class="d-none alert alert-warning"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-lg-10 mx-auto">
+                <h3>Sample Code</h3>
+                <pre class="bg-dark text-light p-3 rounded"><code>import asyncio
+from bocksup import create_client
+
+async def main():
+    # Create a WhatsApp client
+    client = create_client("phone_number", "password")
+    
+    # Connect to WhatsApp
+    connected = await client.connect()
+    
+    if connected:
+        # Register message handlers
+        client.register_message_handler(message_handler)
+        
+        # Send a message
+        result = await client.send_text_message(
+            "recipient_number", 
+            "Hello from Bocksup!"
+        )
+        print(f"Message sent: {result}")
+    
+    # Keep the connection alive
+    await asyncio.sleep(60)
+    await client.disconnect()
+
+async def message_handler(message_data):
+    print(f"Message received: {message_data}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-dark">
+        <div class="container text-center">
+            <p class="text-light mb-0">Bocksup v0.2.0 | MIT License | Not affiliated with WhatsApp Inc.</p>
+        </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Fetch library info from the backend
-        fetch('/api/library_info')
-            .then(response => response.json())
-            .then(data => {
-                const statusElement = document.getElementById('library-status');
-                
-                if (data.status === 'available') {
-                    // Library is available
-                    let html = `
-                        <h4>Versiune: ${data.version}</h4>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5>Module Disponibile</h5>
-                                <ul class="list-group">
-                    `;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch library information
+            fetch('/api/library_info')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('library-info-loading').classList.add('d-none');
                     
-                    // Add modules
-                    data.modules.forEach(module => {
-                        html += `<li class="list-group-item">${module}</li>`;
-                    });
-                    
-                    html += `
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>Funcționalități</h5>
-                                <ul class="list-group">
-                    `;
-                    
-                    // Add features
-                    for (const [feature, available] of Object.entries(data.features)) {
-                        const icon = available ? '✅' : '❌';
-                        let featureName = feature.charAt(0).toUpperCase() + feature.slice(1);
+                    if (data.status === 'available') {
+                        document.getElementById('library-info').classList.remove('d-none');
+                        document.getElementById('library-version').textContent = data.version;
                         
-                        // Translate feature names to Romanian
-                        if (feature === 'authentication') featureName = 'Autentificare';
-                        else if (feature === 'messaging') featureName = 'Mesagerie';
-                        else if (feature === 'encryption') featureName = 'Criptare';
-                        else if (feature === 'groups') featureName = 'Grupuri';
-                        else if (feature === 'media') featureName = 'Media';
-                        else if (feature === 'registration') featureName = 'Înregistrare';
-                        
-                        html += `<li class="list-group-item">${icon} ${featureName}</li>`;
+                        const featuresList = document.getElementById('library-features');
+                        for (const [feature, available] of Object.entries(data.features)) {
+                            const li = document.createElement('li');
+                            li.className = available ? 'text-success' : 'text-secondary';
+                            li.textContent = feature.charAt(0).toUpperCase() + feature.slice(1);
+                            if (!available) {
+                                li.textContent += ' (Not available)';
+                            }
+                            featuresList.appendChild(li);
+                        }
+                    } else {
+                        document.getElementById('library-error').classList.remove('d-none');
+                        document.getElementById('library-error').textContent = data.error;
                     }
-                    
-                    html += `
-                                </ul>
-                            </div>
-                        </div>
-                    `;
-                    
-                    statusElement.innerHTML = html;
-                } else {
-                    // Library is not available
-                    statusElement.innerHTML = `
-                        <div class="alert alert-warning">
-                            <h4>Biblioteca nu este disponibilă</h4>
-                            <p>${data.error || 'Biblioteca Bocksup nu a putut fi încărcată.'}</p>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                // Error fetching library info
-                const statusElement = document.getElementById('library-status');
-                statusElement.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4>Eroare</h4>
-                        <p>Nu s-au putut prelua informațiile despre bibliotecă: ${error.message}</p>
-                    </div>
-                `;
-            });
+                })
+                .catch(error => {
+                    document.getElementById('library-info-loading').classList.add('d-none');
+                    document.getElementById('library-error').classList.remove('d-none');
+                    document.getElementById('library-error').textContent = 'Error loading library information: ' + error.message;
+                });
+        });
     </script>
 </body>
 </html>

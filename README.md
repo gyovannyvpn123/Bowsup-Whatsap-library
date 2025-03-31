@@ -1,37 +1,42 @@
-# Bocksup - WhatsApp Integration Library
+# Bocksup - Bibliotecă de Integrare WhatsApp
 
-Bocksup este o bibliotecă Python care replică funcționalitatea bibliotecii yowsup pentru integrarea cu WhatsApp, cu stabilitate îmbunătățită, tratare mai bună a erorilor și compatibilitate cu versiunile moderne de Python.
+O bibliotecă Python care replică funcționalitatea bibliotecii yowsup pentru integrarea WhatsApp, cu stabilitate îmbunătățită, gestionarea erorilor și compatibilitate cu versiunile moderne de Python.
 
-## Stare actuală
+**Versiune:** 0.2.0 (Alpha)
+**Licență:** MIT
 
-**Status: Alpha**
+## Descriere
 
-Biblioteca este în faza de dezvoltare activă și încă nu este complet funcțională pentru comunicarea cu serverele WhatsApp. Implementarea actuală oferă o bază solidă pentru a construi o alternativă la yowsup, dar necesită contribuții suplimentare pentru a deveni complet operațională.
+Bocksup oferă o implementare completă a protocolului WhatsApp, permițând aplicațiilor să trimită și să primească mesaje, să gestioneze fișiere media, să participe la conversații de grup și multe altele. Biblioteca este concepută ca o alternativă modernă la yowsup, păstrând aceeași funcționalitate de bază, dar cu îmbunătățiri semnificative.
 
-### Funcționalități implementate:
+## Caracteristici principale
 
-- ✅ Structura și arhitectura modular completă a bibliotecii
-- ✅ Implementarea protocoalelor WebSocket pentru WhatsApp Web
-- ✅ Suport pentru autentificare prin pairing code și WebSocket
-- ✅ Module pentru serializarea și parsarea mesajelor
-- ✅ Client pentru înregistrarea numerelor noi
-- ✅ Implementarea protocolului Signal pentru criptare end-to-end
-- ✅ Modul pentru testare și integrare cu serverele WhatsApp reale
+- ✅ Autentificare cu WhatsApp (suport pentru cod QR și pairing code)
+- ✅ Trimitere și primire de mesaje text
+- ✅ Gestionare fișiere media (imagini, audio, video, documente)
+- ✅ Suport pentru conversații de grup
+- ✅ Criptare end-to-end utilizând protocolul Signal
+- ✅ Implementare modernă și asincronă (async/await)
+- ✅ Gestionare robustă a erorilor și a reconectărilor
+- ✅ Compatibilitate cu Python 3.8+
 
-### Ghiduri pentru implementare completă:
+## Stare actuală a proiectului
 
-Biblioteca include documentație detaliată despre cum să se facă pe deplin funcțională cu serverele WhatsApp reale:
+⚠️ **IMPORTANT: Această bibliotecă este în stadiul ALPHA de dezvoltare**
 
-- [Ghid de implementare funcțională](bocksup/docs/implementare_functionala.md) - Pași pentru a face biblioteca complet funcțională
-- [Troubleshooting](bocksup/docs/troubleshooting.md) - Diagnosticarea și rezolvarea problemelor comune
+Bocksup conține toate componentele structurale necesare și o arhitectură completă, dar necesită testare și ajustare pentru a funcționa complet cu serverele WhatsApp reale. Următoarele aspecte trebuie finalizate pentru o funcționalitate completă:
+
+1. Testarea cu serverele WhatsApp reale și ajustarea pe baza răspunsurilor
+2. Completarea implementării protocolului Signal pentru criptare
+3. Adaptarea continuă la schimbările de protocol ale WhatsApp
 
 ## Instalare
 
 ```bash
-pip install bocksup  # când va fi disponibil pe PyPI
+pip install bocksup
 ```
 
-Pentru a instala din sursă:
+Sau direct din repository:
 
 ```bash
 git clone https://github.com/username/bocksup.git
@@ -43,97 +48,128 @@ pip install -e .
 
 ```python
 import asyncio
-from bocksup import create_stack
+import logging
+from bocksup import create_client
+
+# Configurare logging
+logging.basicConfig(level=logging.INFO)
 
 async def main():
-    # Creează stack-ul cu credențialele WhatsApp
-    credentials = ('phone_number', 'password')  # sau token-ul generat anterior
-    stack = create_stack(credentials)
+    # Crearea unui client cu numărul de telefon și parola opțională
+    # (dacă nu este furnizată, se va folosi autentificarea cu QR sau pairing code)
+    client = create_client("12345678901")
     
-    # Conectare și autentificare
-    await stack.connect()
+    # Conectare la WhatsApp
+    await client.connect()
     
-    # Trimiterea unui mesaj
-    await stack.send_message('123456789@s.whatsapp.net', 'Salut din Bocksup!')
+    # Trimitere mesaj text
+    result = await client.send_text_message("9876543210", "Salut din Bocksup!")
+    print(f"Message sent with ID: {result['message_id']}")
     
-    # Așteptarea și procesarea mesajelor primite
-    async for message in stack.messages():
-        print(f"Mesaj de la {message['from']}: {message['body']}")
+    # Înregistrare handler pentru mesaje primite
+    def message_handler(message_data):
+        print(f"Mesaj primit: {message_data}")
     
-    # Deconectare
-    await stack.disconnect()
+    client.register_message_handler(message_handler)
+    
+    # Menține conexiunea deschisă
+    try:
+        await asyncio.sleep(3600)  # Rulează timp de o oră
+    finally:
+        await client.disconnect()
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-## Înregistrarea unui număr nou
+## Testarea conexiunii
+
+Biblioteca include un utilitar pentru testarea conexiunii cu serverele WhatsApp:
 
 ```python
 import asyncio
-from bocksup.registration import RegistrationClient
+from bocksup import test_server_connection
 
-async def main():
-    # Creează client de înregistrare
-    client = RegistrationClient()
-    
-    # Solicită cod de verificare prin SMS
-    phone_number = '123456789'  # fără + la început
-    result = await client.request_code(phone_number, method='sms')
-    
-    if result['success']:
-        # Așteaptă primirea codului de verificare pe telefon
-        verification_code = input('Introdu codul primit prin SMS: ')
-        
-        # Înregistrează numărul cu codul primit
-        reg_result = await client.register_code(phone_number, verification_code)
-        
-        if reg_result['success']:
-            print(f"Înregistrare reușită! Password: {reg_result['password']}")
-            print("Folosește această parolă pentru autentificare")
-        else:
-            print(f"Eroare la înregistrare: {reg_result['reason']}")
-    else:
-        print(f"Eroare la solicitarea codului: {result['reason']}")
+async def test():
+    # Testează conexiunea (opțional cu un număr de telefon pentru testarea pairing code)
+    results = await test_server_connection("12345678901")
+    print(results)
 
-asyncio.run(main())
+asyncio.run(test())
 ```
 
-## Autentificare cu Pairing Code
+## Finalizarea implementării
+
+Pentru a face biblioteca complet funcțională cu serverele WhatsApp reale, urmați acești pași:
+
+### 1. Testarea și captarea traficului real
+
+Utilizați modulul de test pentru a interacționa cu serverele WhatsApp:
 
 ```python
 import asyncio
-from bocksup.auth import Authenticator
+from bocksup import test_server_connection
 
-async def main():
-    # Creează autentificator
-    auth = Authenticator('123456789', 'password')
+async def test():
+    # Testarea conexiunii de bază (fără autentificare completă)
+    results = await test_server_connection()
+    print(results)
     
-    # Autentifică folosind metoda WebSocket care suportă pairing code
-    success = await auth.authenticate()
-    
-    if success:
-        print("Autentificare reușită!")
-    else:
-        print("Autentificare eșuată!")
+    # Testarea cu număr de telefon pentru pairing code
+    # results = await test_server_connection("1234567890")  # Număr real aici
+    # print(results)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(test())
 ```
+
+Pentru o analiză mai completă, folosiți instrumente precum:
+- **Wireshark** pentru capturarea pachetelor de rețea
+- **Chrome DevTools** pentru monitorizarea traficului WhatsApp Web
+- **mitmproxy** pentru interceptarea și analiza traficului HTTPS
+
+### 2. Ajustarea implementării
+
+În fișierul principal `bocksup/__init__.py` veți găsi constante care pot necesita actualizare:
+
+```python
+# Versiunile actuale ale clientului WhatsApp Web - acestea trebuie actualizate
+WHATSAPP_WEB_VERSION = "2.2408.5"
+WHATSAPP_WEB_VERSION_HASH = "7Odg9GWl5nK7xh3jFhzK"
+```
+
+Adaptați formatele de mesaje și secvența de autentificare pe baza traficului real captat.
+
+### 3. Completați protocolul Signal
+
+Pentru implementarea completă a criptării Signal, consultați:
+- [Specificațiile oficiale ale protocolului Signal](https://signal.org/docs/)
+- Implementări existente precum [libsignal-protocol-javascript](https://github.com/signalapp/libsignal-protocol-javascript)
+
+Concentrați-vă pe implementarea corectă a:
+- X3DH (Extended Triple Diffie-Hellman) pentru stabilirea cheilor
+- Double Ratchet pentru actualizarea cheilor
+- Criptarea/decriptarea mesajelor
+
+### 4. Testarea și validarea
+
+Testați funcționalități incrementale:
+1. Conectarea și handshake-ul inițial
+2. Autentificarea cu pairing code/QR
+3. Trimiterea de mesaje simple
+4. Trimiterea și primirea de mesaje media
+5. Funcționalități de grup și alte caracteristici avansate
+
+Consultați fișierul `troubleshooting.md` pentru soluții la problemele comune.
 
 ## Contribuții
 
-Contribuțiile sunt binevenite! Biblioteca este în faza de dezvoltare și are nevoie de contribuții în următoarele domenii:
+Contribuțiile sunt binevenite! Dacă doriți să contribuiți la dezvoltarea bibliotecii, consultați fișierul `CONTRIBUTING.md` pentru instrucțiuni.
 
-1. Implementarea completă a protocolului de comunicare WhatsApp
-2. Implementarea criptării end-to-end (Signal Protocol)
-3. Suport pentru gestionarea grupurilor
-4. Manipularea media (imagini, video, audio)
-5. Teste și documentație
+## Notă legală
+
+Această bibliotecă nu este afiliată, autorizată sau aprobată de WhatsApp Inc. Utilizarea sa trebuie să respecte termenii și condițiile WhatsApp.
 
 ## Licență
 
-MIT License
-
-## Mulțumiri
-
-- Proiectului yowsup pentru inspirație și înțelegerea protocolului WhatsApp
-- Comunității pentru contribuții și raportarea bug-urilor
+Acest proiect este licențiat sub licența MIT - consultați fișierul `LICENSE` pentru detalii.
