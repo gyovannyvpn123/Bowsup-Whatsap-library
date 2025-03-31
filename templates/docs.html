@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentație Bocksup | WhatsApp Integration Library</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .code-block {
+            background-color: var(--bs-dark);
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        pre {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Bocksup</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/docs">Documentation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/examples">Examples</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">About</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="mb-5">Documentație Bocksup</h1>
+        
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="card mb-4 sticky-top" style="top: 20px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Cuprins</h5>
+                    </div>
+                    <div class="card-body">
+                        <nav id="toc" class="nav flex-column">
+                            <a class="nav-link" href="#introducere">Introducere</a>
+                            <a class="nav-link" href="#instalare">Instalare</a>
+                            <a class="nav-link" href="#autentificare">Autentificare</a>
+                            <a class="nav-link" href="#trimitere-mesaje">Trimitere mesaje</a>
+                            <a class="nav-link" href="#primire-mesaje">Primire mesaje</a>
+                            <a class="nav-link" href="#gestionare-media">Gestionare media</a>
+                            <a class="nav-link" href="#grupuri">Grupuri</a>
+                            <a class="nav-link" href="#criptare">Criptare end-to-end</a>
+                            <a class="nav-link" href="#api-reference">Referință API</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <section id="introducere" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Introducere</h2>
+                            <p>
+                                Bocksup este o bibliotecă Python care oferă un API pentru integrarea cu WhatsApp. 
+                                Cu Bocksup, poți trimite și primi mesaje, gestiona grupuri și contacte, 
+                                și lucra cu toate funcționalitățile WhatsApp direct din aplicațiile tale Python.
+                            </p>
+                            <p>
+                                Biblioteca este structurată pe mai multe straturi care gestionează diferite aspecte 
+                                ale comunicării cu serverele WhatsApp:
+                            </p>
+                            <ul>
+                                <li><strong>Stratul de rețea</strong> - gestionează conexiunile cu serverele WhatsApp</li>
+                                <li><strong>Stratul de protocol</strong> - implementează protocolul de comunicare WhatsApp</li>
+                                <li><strong>Stratul de criptare</strong> - asigură criptarea end-to-end a mesajelor</li>
+                                <li><strong>Stratul de autentificare</strong> - gestionează autentificarea cu serverele WhatsApp</li>
+                                <li><strong>Stratul de mesagerie</strong> - furnizează API-uri simple pentru trimiterea și primirea mesajelor</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="instalare" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Instalare</h2>
+                            <p>
+                                Poți instala Bocksup folosind pip:
+                            </p>
+                            <div class="code-block mb-4">
+                                <pre><code>pip install bocksup</code></pre>
+                            </div>
+                            <p>
+                                Sau direct din surse:
+                            </p>
+                            <div class="code-block mb-4">
+                                <pre><code>git clone https://github.com/bocksup/bocksup.git
+cd bocksup
+pip install -e .</code></pre>
+                            </div>
+                            <p>
+                                Dependențe:
+                            </p>
+                            <ul>
+                                <li>Python 3.8 sau mai nou</li>
+                                <li>aiohttp</li>
+                                <li>websockets</li>
+                                <li>pycryptodome</li>
+                                <li>construct</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="autentificare" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Autentificare</h2>
+                            <p>
+                                Pentru a te conecta la WhatsApp, ai nevoie de numărul de telefon și parola asociată 
+                                contului tău WhatsApp. Iată cum să configurezi și să te autentifici:
+                            </p>
+                            <div class="code-block mb-4">
+                                <pre><code>import bocksup
+import asyncio
+
+async def main():
+    # Crearea stack-ului de comunicare
+    stack = bocksup.create_stack(
+        credentials=("123456789", "password"),  # Numărul tău și parola WhatsApp
+        encryption_enabled=True  # Activează criptarea end-to-end
+    )
+    
+    # Conectare la serverele WhatsApp
+    if await stack.connect():
+        print("Conectat cu succes la WhatsApp")
+        
+        # Autentificare
+        if await stack.authenticate():
+            print("Autentificat cu succes")
+        else:
+            print("Autentificare eșuată")
+    else:
+        print("Conectare eșuată")
+        
+asyncio.run(main())</code></pre>
+                            </div>
+                            <div class="alert alert-info">
+                                <strong>Notă:</strong> Obținerea parolei pentru WhatsApp necesită procesul de înregistrare 
+                                care este explicat în secțiunea de înregistrare.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="trimitere-mesaje" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Trimitere mesaje</h2>
+                            <p>
+                                După autentificare, poți trimite diferite tipuri de mesaje. Iată câteva exemple:
+                            </p>
+                            
+                            <h5 class="mt-4">Mesaj text simplu</h5>
+                            <div class="code-block mb-4">
+                                <pre><code># Trimite un mesaj text
+await stack.send_message({
+    "type": "text",
+    "to": "4071234567",  # Numărul destinatarului
+    "body": "Salut din Bocksup!"
+})</code></pre>
+                            </div>
+                            
+                            <h5 class="mt-4">Mesaj media (imagine)</h5>
+                            <div class="code-block mb-4">
+                                <pre><code># Trimite o imagine
+await stack.send_message({
+    "type": "media",
+    "media_type": "image",
+    "to": "4071234567",
+    "file_path": "/cale/catre/imagine.jpg",
+    "caption": "O imagine frumoasă!"
+})</code></pre>
+                            </div>
+                            
+                            <h5 class="mt-4">Mesaj cu locație</h5>
+                            <div class="code-block mb-4">
+                                <pre><code># Trimite o locație
+await stack.send_message({
+    "type": "location",
+    "to": "4071234567",
+    "latitude": 44.439663,
+    "longitude": 26.096306,
+    "name": "București",
+    "address": "București, România"
+})</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="primire-mesaje" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Primire mesaje</h2>
+                            <p>
+                                Pentru a primi mesaje, trebuie să configurezi un handler pentru mesaje 
+                                înainte de a construi stack-ul:
+                            </p>
+                            <div class="code-block mb-4">
+                                <pre><code>import bocksup
+import asyncio
+
+async def handle_message(message_data):
+    """
+    Funcție pentru gestionarea mesajelor primite.
+    """
+    print(f"Mesaj primit: {message_data}")
+    
+    # Verifică tipul mesajului
+    if message_data.get("type") == "text":
+        sender = message_data.get("from")
+        body = message_data.get("body")
+        print(f"Mesaj text de la {sender}: {body}")
+        
+        # Poți răspunde automat
+        await stack.send_message({
+            "type": "text",
+            "to": sender,
+            "body": f"Am primit mesajul tău: {body}"
+        })
+
+async def main():
+    # Creează builder-ul de stack
+    builder = bocksup.stack.builder.StackBuilder()
+    
+    # Setează handler-ul pentru mesaje
+    builder.set_message_handler(handle_message)
+    
+    # Construiește stack-ul
+    global stack
+    stack = builder.build(
+        credentials=("123456789", "password"),
+        encryption_enabled=True
+    )
+    
+    # Conectare și autentificare
+    if await stack.connect() and await stack.authenticate():
+        print("Conectat și autentificat. Așteptare mesaje...")
+        
+        # Menține aplicația în execuție
+        while True:
+            await asyncio.sleep(1)
+    
+asyncio.run(main())</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="gestionare-media" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Gestionare media</h2>
+                            <p>
+                                Bocksup oferă funcționalități pentru gestionarea conținutului media (imagini, video, audio, documente):
+                            </p>
+                            
+                            <h5 class="mt-4">Trimitere imagine</h5>
+                            <div class="code-block mb-4">
+                                <pre><code>from bocksup.media.uploader import MediaUploader
+
+# Inițializare uploader
+uploader = MediaUploader(stack.auth_layer)
+
+# Încărcare imagine pe serverele WhatsApp
+media_info = await uploader.upload_image("path/to/image.jpg")
+
+# Trimite mesaj cu imagine
+await stack.send_message({
+    "type": "media",
+    "media_type": "image",
+    "to": "4071234567",
+    "url": media_info["url"],
+    "media_key": media_info["media_key"],
+    "mime_type": "image/jpeg",
+    "caption": "O imagine frumoasă!"
+})</code></pre>
+                            </div>
+                            
+                            <h5 class="mt-4">Descărcare media primită</h5>
+                            <div class="code-block mb-4">
+                                <pre><code>from bocksup.media.downloader import MediaDownloader
+
+async def handle_media_message(message_data):
+    # Verifică dacă este un mesaj media
+    if message_data.get("type") == "media":
+        # Inițializare downloader
+        downloader = MediaDownloader(stack.auth_layer)
+        
+        # Descarcă media
+        file_path = await downloader.download_media(
+            url=message_data.get("url"),
+            media_key=message_data.get("media_key"),
+            file_type=message_data.get("mime_type"),
+            save_path="downloaded_media/"
+        )
+        
+        print(f"Media descărcată: {file_path}")</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Mai multe secțiuni ale documentației ar continua aici... -->
+                
+                <section id="api-reference" class="mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Referință API</h2>
+                            <p>
+                                Pentru documentația completă a API-ului, vezi referința detaliată pe GitHub.
+                            </p>
+                            <div class="alert alert-info">
+                                <strong>Notă:</strong> Bocksup are o interfață similară cu yowsup, dar cu îmbunătățiri și 
+                                modificări care sporesc stabilitatea și gestionarea erorilor.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Bocksup</h5>
+                    <p>O bibliotecă Python pentru integrarea WhatsApp</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>Licență: MIT</p>
+                    <p>Versiune: 0.1.0</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Highlight active section in table of contents
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('#toc .nav-link');
+            
+            function setActiveLink() {
+                let found = false;
+                
+                sections.forEach((section, index) => {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= 100 && !found) {
+                        navLinks.forEach(link => link.classList.remove('active', 'fw-bold'));
+                        navLinks[index].classList.add('active', 'fw-bold');
+                        found = true;
+                    }
+                });
+                
+                if (!found) {
+                    navLinks.forEach(link => link.classList.remove('active', 'fw-bold'));
+                    navLinks[0].classList.add('active', 'fw-bold');
+                }
+            }
+            
+            // Initial call
+            setActiveLink();
+            
+            // Update on scroll
+            window.addEventListener('scroll', setActiveLink);
+        });
+    </script>
+</body>
+</html>
