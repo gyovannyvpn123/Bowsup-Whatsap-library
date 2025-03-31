@@ -105,7 +105,8 @@ class WhatsAppConnection:
         try:
             logger.info(f"[{self.connection_id}] Conectare la {self.server_url}...")
             
-            # Deschidere WebSocket
+            # Folosim o metodă simplificată pentru a conecta la WebSocket
+            # Folosim metoda standard connect() din websockets
             self._websocket = await websockets.connect(
                 self.server_url,
                 extra_headers={
@@ -115,6 +116,7 @@ class WhatsAppConnection:
                 },
                 ping_interval=20,
                 ping_timeout=30,
+                max_size=None,  # Fără limită de dimensiune pentru mesaje
                 close_timeout=10
             )
             
