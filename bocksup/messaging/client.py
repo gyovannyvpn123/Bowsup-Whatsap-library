@@ -1,230 +1,223 @@
 """
-Modul pentru gestionarea mesajelor WhatsApp.
+Messaging client for WhatsApp.
 
-Acest modul implementează funcționalitățile de bază pentru
-trimiterea și primirea mesajelor prin rețeaua WhatsApp.
+This module provides a high-level client for sending and receiving
+WhatsApp messages.
 """
 
+import time
+import uuid
+import json
 import logging
 import asyncio
-import json
-from typing import Dict, Callable, Optional, List, Union
+from typing import Dict, Any, Optional, Union, Callable, List
 
-import bocksup
-from bocksup.auth.authenticator import Authenticator
-from bocksup.layers.network.connection import WhatsAppConnection
+from ..common.exceptions import (
+    ConnectionError,
+    AuthenticationError,
+    MessageError
+)
+from ..common.constants import (
+    MSG_TYPE_TEXT,
+    MSG_TYPE_IMAGE,
+    MSG_TYPE_AUDIO,
+    MSG_TYPE_VIDEO,
+    MSG_TYPE_DOCUMENT,
+    MSG_STATUS_PENDING,
+    MSG_STATUS_SENT
+)
+from ..auth.authenticator import Authenticator
 
 logger = logging.getLogger(__name__)
 
 class MessagingClient:
     """
-    Client pentru trimiterea și primirea mesajelor WhatsApp.
+    Client for sending and receiving WhatsApp messages.
     
-    Această clasă oferă o interfață de nivel înalt pentru interacțiunea cu WhatsApp,
-    inclusiv trimiterea de mesaje, primirea de notificări și gestionarea media.
+    This class provides a high-level interface for interacting with WhatsApp,
+    including sending messages, receiving notifications, and managing media.
     """
     
     def __init__(self, phone_number: str, password: Optional[str] = None):
         """
-        Inițializează clientul de mesagerie.
+        Initialize the messaging client.
         
         Args:
-            phone_number: Numărul de telefon WhatsApp
-            password: Parola sau token-ul WhatsApp (opțional pentru autentificare QR)
+            phone_number: WhatsApp phone number
+            password: WhatsApp password or auth token (optional for QR login)
         """
-        self._phone_number = phone_number
-        self._password = password or ""  # Asigură că password nu este None
-        self._connection = WhatsAppConnection()
-        self._authenticator = Authenticator(phone_number, self._password)
-        self._authenticator.set_lower(self._connection)
-        self._connected = False
-        self._authenticated = False
-        self._message_handlers = []
-        self._presence_handlers = []
-        self._receipt_handlers = []
-        
+        self.phone_number = phone_number
+        self.password = password
+        self.authenticator = Authenticator(phone_number, password)
+        self.message_handlers = []
+        self.presence_handlers = []
+        self.receipt_handlers = []
+        self.connected = False
+        self.authenticated = False
+        self._register_default_handlers()
+    
     async def connect(self) -> bool:
         """
-        Conectare și autentificare cu WhatsApp.
+        Connect and authenticate with WhatsApp.
         
         Returns:
-            bool: True dacă conectarea și autentificarea au reușit
+            bool: True if connection and authentication were successful
         """
-        logger.info(f"Conectare la serverele WhatsApp cu numărul {self._phone_number}")
-        
-        # Conectare
-        connected = await self._connection.connect()
-        if not connected:
-            logger.error("Conectarea la serverele WhatsApp a eșuat")
-            return False
-            
-        self._connected = True
-        logger.info("Conectat la serverele WhatsApp")
-        
-        # Autentificare
         try:
-            authenticated = await self._authenticator.authenticate()
-            if not authenticated:
-                logger.error("Autentificarea a eșuat")
-                self._authenticated = False
+            logger.info(f"Conectare pentru numărul de telefon: {self.phone_number}")
+            
+            # Authenticate with WhatsApp
+            authenticated = await self.authenticator.authenticate()
+            
+            if authenticated:
+                logger.info("Autentificare reușită")
+                self.authenticated = True
+                
+                # Save connection reference
+                if self.authenticator.connection:
+                    self.connection = self.authenticator.connection
+                    self.connected = self.connection.is_connected
+                
+                # Get pairing code if available
+                if self.authenticator.pairing_code:
+                    logger.info(f"Cod de asociere: {self.authenticator.pairing_code}")
+                
+                return True
+            else:
+                logger.error("Autentificare eșuată")
                 return False
                 
-            self._authenticated = True
-            logger.info("Autentificat cu succes la WhatsApp")
-            
-            # Înregistrăm handler-e implicite
-            self._register_default_handlers()
-            
-            return True
-            
-        except bocksup.AuthenticationError as e:
-            logger.error(f"Eroare de autentificare: {e}")
-            self._authenticated = False
+        except Exception as e:
+            logger.error(f"Eroare la conectare: {str(e)}")
             return False
-            
+    
     async def disconnect(self) -> None:
         """
-        Deconectare de la WhatsApp.
+        Disconnect from WhatsApp.
         """
-        if self._connected:
-            await self._connection.disconnect()
-            self._connected = False
-            self._authenticated = False
-            logger.info("Deconectat de la serverele WhatsApp")
-            
+        if hasattr(self, 'connection') and self.connection:
+            await self.connection.disconnect()
+            self.connected = False
+            self.authenticated = False
+            logger.info("Deconectat de la WhatsApp")
+    
     async def send_text_message(self, to: str, text: str) -> Dict:
         """
-        Trimite un mesaj text.
+        Send a text message.
         
         Args:
-            to: Numărul destinatarului sau JID
-            text: Textul mesajului
+            to: Recipient's phone number or JID
+            text: Message text
             
         Returns:
-            Dict conținând ID-ul mesajului și starea
+            Dict containing message ID and status
             
         Raises:
-            ConnectionError: Dacă nu sunteți conectat
-            MessageError: Dacă trimiterea mesajului eșuează
+            ConnectionError: If not connected
+            MessageError: If message sending fails
         """
-        if not self._connected or not self._authenticated:
-            raise bocksup.ConnectionError("Nu sunteți conectat sau autentificat")
-            
+        if not self.connected or not hasattr(self, 'connection'):
+            raise ConnectionError("Not connected to WhatsApp")
+        
         try:
-            # Asigurăm că numărul destinatarului este formatat corect
-            if not to.endswith('@s.whatsapp.net'):
-                to = bocksup.phone_to_jid(to)
-                
-            # Generare ID mesaj
-            message_id = bocksup.generate_random_id()
+            # Generate message ID
+            message_id = f"bocksup_{int(time.time())}_{uuid.uuid4().hex[:8]}"
             
-            # Construire mesaj
-            message_data = {
-                "id": message_id,
+            # Create message content
+            message = {
+                "tag": self.connection.protocol.generate_tag(),
                 "type": "message",
                 "to": to,
-                "content": {
-                    "type": "text",
-                    "text": text
-                },
-                "timestamp": bocksup.timestamp_now()
-            }
-            
-            # Trimitere mesaj
-            logger.info(f"Trimitere mesaj către {to}")
-            tag = await self._connection.send_message(message_data)
-            
-            # În mod normal, ar trebui să așteptăm o confirmare de la server
-            # Dar pentru simplitate, presupunem că mesajul a fost trimis
-            
-            result = {
                 "id": message_id,
-                "status": "sent",
-                "tag": tag
+                "content": {
+                    "type": MSG_TYPE_TEXT,
+                    "text": text
+                }
             }
             
-            logger.info(f"Mesaj trimis cu ID: {message_id}")
-            return result
+            # Send the message
+            logger.info(f"Trimitere mesaj către {to}: {text[:30]}...")
+            await self.connection.send_message(message)
+            
+            # Return message info
+            return {
+                "id": message_id,
+                "status": MSG_STATUS_SENT,
+                "timestamp": int(time.time())
+            }
             
         except Exception as e:
-            logger.error(f"Eroare la trimiterea mesajului: {e}")
-            raise bocksup.MessageError(f"Nu s-a putut trimite mesajul: {e}")
-            
+            logger.error(f"Eroare la trimiterea mesajului: {str(e)}")
+            raise MessageError(f"Failed to send message: {str(e)}")
+    
     def register_message_handler(self, handler: Callable) -> None:
         """
-        Înregistrează un handler pentru mesajele primite.
+        Register a handler for incoming messages.
         
         Args:
-            handler: Funcția callback pentru tratarea mesajelor
+            handler: Callback function to handle messages
         """
-        self._message_handlers.append(handler)
-        
+        self.message_handlers.append(handler)
+    
     def register_presence_handler(self, handler: Callable) -> None:
         """
-        Înregistrează un handler pentru actualizările de prezență.
+        Register a handler for presence updates.
         
         Args:
-            handler: Funcția callback pentru tratarea actualizărilor de prezență
+            handler: Callback function to handle presence updates
         """
-        self._presence_handlers.append(handler)
-        
+        self.presence_handlers.append(handler)
+    
     def register_receipt_handler(self, handler: Callable) -> None:
         """
-        Înregistrează un handler pentru confirmările de mesaje.
+        Register a handler for message receipts.
         
         Args:
-            handler: Funcția callback pentru tratarea confirmărilor
+            handler: Callback function to handle receipts
         """
-        self._receipt_handlers.append(handler)
-        
+        self.receipt_handlers.append(handler)
+    
     def _register_default_handlers(self) -> None:
         """
-        Înregistrează handler-e implicite pentru diverse tipuri de mesaje.
+        Register default handlers for various message types.
         """
-        # Înregistrăm handler-ele în conexiune
+        # These would be registered with the connection object once it's created
+        # during the authentication process
         
         async def message_handler(data):
-            """Handler pentru mesaje primite"""
-            logger.debug(f"Mesaj primit: {data}")
-            for handler in self._message_handlers:
+            """Handle incoming messages."""
+            logger.info(f"Mesaj primit: {str(data)[:100]}...")
+            
+            for handler in self.message_handlers:
                 try:
                     await handler(data)
                 except Exception as e:
-                    logger.error(f"Eroare în handler de mesaje: {e}")
+                    logger.error(f"Eroare în handler de mesaje: {str(e)}")
         
         async def receipt_handler(data):
-            """Handler pentru confirmări"""
-            logger.debug(f"Confirmare primită: {data}")
-            for handler in self._receipt_handlers:
+            """Handle message receipts."""
+            logger.info(f"Confirmare primită: {str(data)[:100]}...")
+            
+            for handler in self.receipt_handlers:
                 try:
                     await handler(data)
                 except Exception as e:
-                    logger.error(f"Eroare în handler de confirmări: {e}")
+                    logger.error(f"Eroare în handler de confirmări: {str(e)}")
         
         async def presence_handler(data):
-            """Handler pentru actualizări de prezență"""
-            logger.debug(f"Actualizare prezență: {data}")
-            for handler in self._presence_handlers:
+            """Handle presence updates."""
+            logger.info(f"Actualizare prezență: {str(data)[:100]}...")
+            
+            for handler in self.presence_handlers:
                 try:
                     await handler(data)
                 except Exception as e:
-                    logger.error(f"Eroare în handler de prezență: {e}")
-                    
-        # Înregistrăm handler-ele în conexiune
-        self._connection.register_callback("message", message_handler)
-        self._connection.register_callback("receipt", receipt_handler)
-        self._connection.register_callback("presence", presence_handler)
-
-
-def create_client(phone_number: str, password: Optional[str] = None) -> MessagingClient:
-    """
-    Creează un client WhatsApp pentru mesagerie.
-    
-    Args:
-        phone_number: Numărul de telefon pentru contul WhatsApp
-        password: Parola sau token-ul (opțional pentru autentificare QR)
+                    logger.error(f"Eroare în handler de prezență: {str(e)}")
         
-    Returns:
-        MessagingClient configurat
-    """
-    return MessagingClient(phone_number, password)
+        # These handlers will be connected to the actual connection
+        # during the authentication process
+        self._default_handlers = {
+            "chat_message": message_handler,
+            "receipt": receipt_handler,
+            "presence": presence_handler
+        }

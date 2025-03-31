@@ -1,70 +1,124 @@
 #!/usr/bin/env python3
 """
-Script pentru obținerea unui cod de asociere pentru autentificare WhatsApp.
+Bocksup - Script pentru obținerea codului de asociere WhatsApp
+
+Acest script demonstrează cum să folosiți biblioteca Bocksup pentru a obține
+un cod de asociere WhatsApp pentru un număr de telefon specificat.
 """
 
 import asyncio
 import logging
-import bocksup
+import argparse
+import sys
+from typing import Optional
 
-# Setarea nivelului de logging pentru a vedea detalii ale procesului
-logging.basicConfig(level=logging.INFO, 
-                  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("PairingCode")
+# Configurare logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
-# Numărul de telefon pentru care solicităm codul de asociere
-PHONE_NUMBER = "40748427351"
+logger = logging.getLogger("Bocksup-Web")
 
-async def get_pairing_code():
-    """Obține codul de asociere pentru numărul de telefon specificat."""
-    logger.info(f"Solicitare cod de asociere pentru numărul {PHONE_NUMBER}...")
+# Importați modulele Bocksup
+from bocksup import create_client, test_server_connection
+from bocksup.auth import Authenticator
+
+async def get_pairing_code(phone_number: str) -> Optional[str]:
+    """
+    Obține un cod de asociere WhatsApp pentru numărul de telefon specificat.
     
+    Args:
+        phone_number: Numărul de telefon în format internațional (ex: 40712345678)
+        
+    Returns:
+        Codul de asociere sau None dacă a eșuat
+    """
     try:
-        # Apelăm funcția test_server_connection cu numărul de telefon pentru a solicita un cod de asociere
-        result = await bocksup.test_server_connection(PHONE_NUMBER)
+        logger.info(f"Solicitare cod de asociere pentru numărul: {phone_number}")
         
-        # Afișăm rezultatul complet pentru a vedea toate detaliile
-        logger.info(f"Rezultat complet: {result}")
+        # Creați un autentificator (fără parolă pentru a forța solicitarea codului de asociere)
+        authenticator = Authenticator(phone_number)
         
-        # Verificăm dacă a fost solicitat un cod de asociere
-        if result.get('pairing_code', False):
-            logger.info("✅ Solicitare cod de asociere reușită!")
-            
-            # Încercăm să extragem codul de asociere din mesaje
-            for msg in result.get('messages', []):
-                logger.info(f"Mesaj: {msg}")
-                if isinstance(msg, dict) and 'content' in msg:
-                    content = msg['content']
-                    if isinstance(content, dict) and 'pairingCode' in content:
-                        code = content['pairingCode']
-                        logger.info(f"✅ Cod de asociere găsit: {code}")
-                        return code
-            
-            logger.info("Codul de asociere ar trebui să se afișeze pe telefonul dvs.")
-            logger.info("Verificați telefonul și introduceți codul când apare.")
+        # Autentificați și obțineți codul
+        authenticated = await authenticator.authenticate()
+        
+        if authenticated and authenticator.pairing_code:
+            logger.info(f"Cod de asociere obținut: {authenticator.pairing_code}")
+            return authenticator.pairing_code
         else:
-            logger.error("❌ Solicitare cod de asociere eșuată!")
+            logger.error("Nu s-a putut obține codul de asociere")
+            return None
             
     except Exception as e:
-        logger.error(f"Eroare la solicitarea codului de asociere: {e}")
-    
-    return None
+        logger.error(f"Eroare la obținerea codului de asociere: {str(e)}")
+        return None
+    finally:
+        # Asigurați-vă că se închide conexiunea
+        if hasattr(authenticator, 'connection') and authenticator.connection:
+            await authenticator.connection.disconnect()
 
-async def main():
-    """Funcția principală."""
-    logger.info("Începere proces obținere cod de asociere...")
+async def test_connection(phone_number: Optional[str] = None) -> None:
+    """
+    Testează conexiunea la serverele WhatsApp.
     
-    # Obținem codul de asociere
-    pairing_code = await get_pairing_code()
+    Args:
+        phone_number: Opțional, număr de telefon pentru testarea codului de asociere
+    """
+    try:
+        logger.info("Testare conexiune la serverele WhatsApp...")
+        
+        results = await test_server_connection(phone_number)
+        
+        logger.info(f"Rezultate test:")
+        logger.info(f"- Conexiune: {'✓' if results['connection'] else '✗'}")
+        logger.info(f"- Handshake: {'✓' if results['handshake'] else '✗'}")
+        logger.info(f"- Challenge: {'✓' if results['challenge'] else '✗'}")
+        
+        if phone_number:
+            logger.info(f"- Cod asociere: {'✓' if results['pairing_code'] else '✗'}")
+        
+        if results['errors']:
+            logger.error("Erori întâlnite în timpul testului:")
+            for error in results['errors']:
+                logger.error(f"  - {error}")
     
-    if pairing_code:
-        logger.info(f"Cod de asociere obținut: {pairing_code}")
-        logger.info("Folosiți acest cod pentru a autentifica aplicația pe telefonul dvs.")
+    except Exception as e:
+        logger.error(f"Eroare la testare: {str(e)}")
+
+async def main(phone_number: str, test_only: bool = False) -> None:
+    """
+    Funcția principală care rulează testele sau obține codul de asociere.
+    
+    Args:
+        phone_number: Numărul de telefon în format internațional
+        test_only: Doar testare, fără solicitare cod de asociere
+    """
+    if test_only:
+        await test_connection(phone_number if phone_number else None)
     else:
-        logger.info("Nu s-a putut obține codul de asociere automat.")
-        logger.info("Verificați telefonul pentru a vedea dacă a apărut un cod de asociere.")
-    
-    logger.info("Proces finalizat!")
+        if not phone_number:
+            logger.error("Trebuie să specificați un număr de telefon pentru a obține un cod de asociere")
+            return
+        
+        pairing_code = await get_pairing_code(phone_number)
+        
+        if pairing_code:
+            # Formatăm codul de asociere pentru afișare
+            logger.info(f"Codul de asociere pentru {phone_number}: {pairing_code}")
+            logger.info(f"Introduceți acest cod în aplicația WhatsApp pentru a finaliza asocierea")
+        else:
+            logger.error("Nu s-a putut obține un cod de asociere. Verificați log-urile pentru detalii.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Obțineți un cod de asociere WhatsApp")
+    parser.add_argument("--phone", type=str, help="Număr de telefon în format internațional (ex: 40712345678)")
+    parser.add_argument("--test", action="store_true", help="Doar testare, fără solicitare cod de asociere")
+    
+    args = parser.parse_args()
+    
+    # Rulare în bucla asyncio
+    asyncio.run(main(args.phone, args.test))

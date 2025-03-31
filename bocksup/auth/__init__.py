@@ -1,10 +1,10 @@
 """
-Authentication module for WhatsApp.
+Pachetul de autentificare.
 
-This module handles authentication with WhatsApp servers,
-including credential management and login procedures.
+Acest pachet conține toate clasele și utilitățile necesare pentru 
+autentificarea la serviciul WhatsApp.
 """
 
-from bocksup.auth.authenticator import Authenticator
+from .authenticator import Authenticator
 
 __all__ = ['Authenticator']

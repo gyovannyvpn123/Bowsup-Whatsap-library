@@ -1,18 +1,10 @@
 """
-Messaging module for WhatsApp communication.
+Pachetul de mesagerie.
 
-This module provides functionality for sending and receiving WhatsApp messages,
-including text messages, media messages, and other message types.
+Acest pachet conține toate clasele și utilitățile necesare pentru
+trimiterea și primirea mesajelor WhatsApp.
 """
 
-from bocksup.messaging.messages import Message, TextMessage, MediaMessage, LocationMessage, ContactMessage
-from bocksup.messaging.handlers import MessageHandler
+from .client import MessagingClient
 
-__all__ = [
-    'Message', 
-    'TextMessage', 
-    'MediaMessage',
-    'LocationMessage',
-    'ContactMessage',
-    'MessageHandler'
-]
+__all__ = ['MessagingClient']

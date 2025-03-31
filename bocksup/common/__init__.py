@@ -1,24 +1,26 @@
 """
-Common utilities and constants for the Bocksup library.
+Pachetul comun.
+
+Acest pachet conține elemente comune folosite în întreaga bibliotecă,
+precum constante, excepții și utilități generale.
 """
 
-from bocksup.common.constants import *
-from bocksup.common.exceptions import *
-from bocksup.common.utils import *
+from .exceptions import (
+    BocksupError,
+    ConnectionError,
+    AuthenticationError,
+    MessageError,
+    ProtocolError,
+    CryptoError,
+    MediaError
+)
 
 __all__ = [
-    'BocksupException',
-    'AuthenticationError',
+    'BocksupError',
     'ConnectionError',
+    'AuthenticationError',
     'MessageError',
     'ProtocolError',
-    'MediaError',
-    'generate_random_id',
-    'to_bytes',
-    'from_bytes',
-    'WHATSAPP_SERVER',
-    'WHATSAPP_PORT',
-    'USER_AGENT',
-    'CONNECT_TIMEOUT',
-    'READ_TIMEOUT'
+    'CryptoError',
+    'MediaError'
 ]

@@ -1,63 +1,31 @@
 """
-Custom exceptions for the Bocksup library.
+Excepții personalizate pentru biblioteca Bocksup.
 """
 
-class BocksupException(Exception):
-    """Base exception for all Bocksup-related errors."""
+class BocksupError(Exception):
+    """Excepție de bază pentru toate erorile Bocksup."""
     pass
 
-class AuthenticationError(BocksupException):
-    """Raised when authentication with WhatsApp servers fails."""
+class ConnectionError(BocksupError):
+    """Excepție pentru erori de conexiune la serverele WhatsApp."""
     pass
 
-class ConnectionError(BocksupException):
-    """Raised when a connection to WhatsApp servers cannot be established or is lost."""
+class AuthenticationError(BocksupError):
+    """Excepție pentru erori de autentificare."""
     pass
 
-class MessageError(BocksupException):
-    """Raised when there is an error sending or receiving a message."""
+class MessageError(BocksupError):
+    """Excepție pentru erori la trimiterea sau primirea mesajelor."""
     pass
 
-class ProtocolError(BocksupException):
-    """Raised when there is an error in the WhatsApp protocol."""
+class ProtocolError(BocksupError):
+    """Excepție pentru erori de protocol (formate greșite, versiuni incompatibile, etc.)."""
     pass
 
-class MediaError(BocksupException):
-    """Raised when there is an error processing media files."""
+class CryptoError(BocksupError):
+    """Excepție pentru erori de criptare sau decriptare."""
     pass
 
-class EncryptionError(BocksupException):
-    """Raised when there is an error with encryption or decryption."""
-    pass
-
-class RegistrationError(BocksupException):
-    """Raised when there is an error with the registration process."""
-    pass
-
-class GroupError(BocksupException):
-    """Raised when there is an error with group operations."""
-    pass
-
-class ContactError(BocksupException):
-    """Raised when there is an error with contact operations."""
-    pass
-
-class StatusError(BocksupException):
-    """Raised when there is an error with status updates."""
-    pass
-
-class TimeoutError(BocksupException):
-    """Raised when an operation times out."""
-    pass
-
-class ValidationError(BocksupException):
-    """Raised when input validation fails."""
-    pass
-
-class ParseError(BocksupException):
-    """Raised when parsing of incoming data fails."""
-    pass
-
-class NotImplementedError(BocksupException):
-    """Raised when a required feature is not yet implemented."""
+class MediaError(BocksupError):
+    """Excepție pentru erori la manipularea fișierelor media."""
     pass

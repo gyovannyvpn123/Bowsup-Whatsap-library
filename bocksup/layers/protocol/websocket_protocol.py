@@ -1,442 +1,205 @@
 """
-WebSocket protocol implementation for WhatsApp.
+Protocol WebSocket pentru comunicarea cu serverele WhatsApp.
 
-This module handles the WebSocket-specific communication protocol
-used by WhatsApp, including handshake, message format, and the
-specific sequences needed for authentication and messaging.
+Acest modul implementează protocolul specific WhatsApp peste WebSocket,
+gestionând structura mesajelor, formatarea, și procesarea datelor.
 """
 
-import json
 import time
-import logging
-import asyncio
-import base64
-import uuid
 import random
-from typing import Dict, Any, Optional, List, Tuple, Union, Callable
+import json
+import logging
+import uuid
+from typing import Dict, Any, Optional, Union, Callable, List, Tuple
 
-from bocksup.common.exceptions import ProtocolError, ConnectionError
-from bocksup.common.constants import (
-    CLIENT_VERSION, PROTOCOL_VERSION, WHATSAPP_WEBSOCKET_URL, USER_AGENT
+from ...common.constants import (
+    DEFAULT_CLIENT_VERSION, 
+    WA_PROTOCOL_VERSION,
+    DEFAULT_PLATFORM,
+    BINARY_TYPE_HANDSHAKE,
+    BINARY_TYPE_PAIRING,
+    BINARY_TYPE_JSON
 )
-from bocksup.common.utils import generate_random_id
+from ...common.exceptions import ProtocolError, BocksupError
+from ...utils.binary_utils import (
+    encode_binary_message,
+    decode_binary_message,
+    encode_json_message_binary,
+    encode_handshake_binary,
+    encode_pairing_request_binary
+)
 
 logger = logging.getLogger(__name__)
 
 class WebSocketProtocol:
     """
-    Implementation of the WhatsApp WebSocket protocol.
+    Protocol pentru comunicarea cu serverele WhatsApp prin WebSocket.
     
-    This class handles the format and sequence of messages required to
-    communicate with WhatsApp servers using their WebSocket protocol.
+    Această clasă gestionează formatarea și parsarea mesajelor pentru protocolul
+    WebSocket specific WhatsApp, implementând handshake-ul și mesajele binare.
     """
     
-    def __init__(self):
-        """Initialize the WebSocket protocol handler."""
-        self.session_id = None
-        self.client_id = f"Bocksup_{uuid.uuid4().hex[:8]}"
-        self.message_counter = 0
-        self.last_message_tag = None
-        self.pending_messages = {}  # Message tags waiting for response
-        self.challenge_data = None  # Used to store auth challenge during login
-        self.pairing_code = None    # Used for phone pairing
-        
-    def create_handshake_message(self) -> str:
+    def __init__(self, 
+                 client_id: str = None,
+                 client_version: str = DEFAULT_CLIENT_VERSION,
+                 protocol_version: str = WA_PROTOCOL_VERSION,
+                 platform: str = DEFAULT_PLATFORM):
         """
-        Create initial handshake message for WebSocket connection.
+        Inițializează protocolul WebSocket.
         
-        This message is essential for establishing connection with WhatsApp Web servers.
-        The format matches exactly the message sent by WhatsApp Web on first connection.
+        Args:
+            client_id: ID client unic, generat automat dacă nu este furnizat
+            client_version: Versiunea client WhatsApp de emulat
+            protocol_version: Versiunea protocolului WhatsApp
+            platform: Platforma client (android, web, etc.)
+        """
+        self.client_id = client_id or str(uuid.uuid4())
+        self.client_version = client_version
+        self.protocol_version = protocol_version
+        self.platform = platform
+        self.server_token = None
+        self.message_tag_counter = 0
+        self.pairing_code = None
+        
+    def generate_tag(self) -> str:
+        """
+        Generează un tag unic pentru mesaje.
         
         Returns:
-            JSON string with handshake message
+            str: Tag unic
         """
-        self.session_id = generate_random_id(10)
-        message_tag = f"{int(time.time())}.--{self.message_counter}"
-        self.message_counter += 1
-        self.last_message_tag = message_tag
+        tag = f"{int(time.time())}.--{self.message_tag_counter}"
+        self.message_tag_counter += 1
+        return tag
+    
+    def create_handshake_message(self) -> Dict[str, Any]:
+        """
+        Creează un mesaj de handshake pentru inițierea conexiunii.
         
+        Returns:
+            Dict conținând datele handshake
+        """
         handshake = {
-            "clientToken": self.client_id,
-            "serverToken": None,  # Initially null, will be set after auth
-            "clientId": f"python:{self.session_id}",
-            "tag": message_tag,
-            "type": "connect",
-            "version": CLIENT_VERSION,
-            "protocolVersion": PROTOCOL_VERSION,
-            "connectType": "PHONE_CONNECTING",
+            "clientId": self.client_id,
+            "connectType": "WIFI_UNKNOWN",
             "connectReason": "USER_ACTIVATED",
-            "features": {
-                "supportsMultiDevice": True,
-                "supportsE2EEncryption": True,
-                "supportsQRLinking": True
-            }
+            "userAgent": {
+                "platform": self.platform,
+                "releaseChannel": "RELEASE",
+                "version": self.client_version,
+                "deviceName": "Bocksup",
+                "manufacturer": "Bocksup",
+                "osVersion": "13",
+                "mcc": "000",
+                "mnc": "000",
+                "osName": "Android",
+                "localeLanguageIso6391": "ro",
+                "localeCountryIso31661Alpha2": "RO"
+            },
+            "webInfo": {
+                "webSubPlatform": "WEB_BROWSER"
+            },
+            "timeout": 60000,
+            "passive": True,
+            "username": self.client_id
         }
         
-        json_data = json.dumps(handshake)
-        logger.debug(f"Created handshake: {json_data[:100]}...")
-        return json_data
-        
-    def create_pairing_code_request(self, phone_number: str) -> str:
+        return handshake
+    
+    def create_handshake_binary(self) -> bytes:
         """
-        Create request for a pairing code.
+        Creează mesajul binar de handshake pentru serverul WhatsApp.
         
-        A pairing code is a short code (typically 8 digits) displayed on
-        the phone that can be used to authenticate without scanning a QR code.
+        Returns:
+            bytes: Mesajul binar de handshake
+        """
+        handshake_data = self.create_handshake_message()
+        return encode_handshake_binary(handshake_data)
+    
+    def create_pairing_request(self, phone_number: str, method: str = "sms") -> Dict[str, Any]:
+        """
+        Creează un mesaj de solicitare cod de asociere.
         
         Args:
-            phone_number: Phone number in international format (e.g., 12025550108)
+            phone_number: Numărul de telefon în format internațional
+            method: Metoda de trimitere a codului (sms sau voice)
             
         Returns:
-            JSON string with pairing code request
+            Dict conținând datele cererii
         """
-        message_tag = f"{int(time.time())}.--{self.message_counter}"
-        self.message_counter += 1
-        self.last_message_tag = message_tag
+        # Format număr de telefon (elimină prefixul '+' dacă există)
+        if phone_number.startswith('+'):
+            phone_number = phone_number[1:]
         
-        request = {
-            "tag": message_tag,
-            "type": "request",
-            "method": "requestPairingCode",
-            "params": {
-                "phoneNumber": phone_number,
-                "requestMeta": {
-                    "platform": "python",
-                    "deviceId": self.client_id,
-                    "sessionId": self.session_id
-                }
-            }
+        # Creează obiectul de cerere
+        pairing_request = {
+            "messageType": "request_pairing_code",
+            "phoneNumber": phone_number,
+            "isPrimaryDevice": True,
+            "method": method
         }
         
-        json_data = json.dumps(request)
-        logger.debug(f"Created pairing code request: {json_data[:100]}...")
-        return json_data
-        
-    def create_pairing_code_verification(self, code: str) -> str:
+        return pairing_request
+    
+    def create_pairing_request_binary(self, phone_number: str, method: str = "sms") -> bytes:
         """
-        Create verification message for pairing code authentication.
+        Creează mesajul binar de solicitare cod de asociere.
         
         Args:
-            code: The pairing code received from the phone
+            phone_number: Numărul de telefon în format internațional
+            method: Metoda de trimitere a codului (sms sau voice)
             
         Returns:
-            JSON string with verification message
+            bytes: Mesajul binar de solicitare cod
         """
-        if not self.challenge_data:
-            raise ProtocolError("Missing challenge data for pairing verification")
-            
-        message_tag = f"{int(time.time())}.--{self.message_counter}"
-        self.message_counter += 1
-        self.last_message_tag = message_tag
-        
-        verification = {
-            "tag": message_tag,
-            "type": "response",
-            "method": "verifyPairingCode",
-            "params": {
-                "code": code,
-                "phoneNumber": self.challenge_data.get("phoneNumber", ""),
-                "deviceId": self.client_id,
-                "sessionId": self.session_id,
-                "challengeToken": self.challenge_data.get("challengeToken", "")
-            }
-        }
-        
-        json_data = json.dumps(verification)
-        logger.debug(f"Created pairing verification: {json_data[:100]}...")
-        return json_data
-        
-    def create_keep_alive(self) -> str:
+        return encode_pairing_request_binary(phone_number, method)
+    
+    def create_json_message_binary(self, data: Dict[str, Any]) -> bytes:
         """
-        Create keep-alive message to maintain the WebSocket connection.
-        
-        Returns:
-            JSON string with keep-alive message
-        """
-        message_tag = f"keepalive--{int(time.time())}"
-        
-        keepalive = {
-            "tag": message_tag,
-            "type": "ping",
-            "timestamp": int(time.time())
-        }
-        
-        return json.dumps(keepalive)
-        
-    def create_presence_update(self, presence_type: str = "available") -> str:
-        """
-        Create a presence update message.
+        Creează un mesaj JSON binar.
         
         Args:
-            presence_type: Type of presence (e.g., "available", "unavailable")
+            data: Datele JSON de codificat
             
         Returns:
-            JSON string with presence update
+            bytes: Mesajul binar
         """
-        message_tag = f"{int(time.time())}.--{self.message_counter}"
-        self.message_counter += 1
+        return encode_json_message_binary(data)
         
-        presence = {
-            "tag": message_tag,
-            "type": "presence",
-            "status": presence_type,
-            "timestamp": int(time.time())
+    def create_keep_alive(self) -> Dict[str, Any]:
+        """
+        Creează un mesaj de keep-alive.
+        
+        Returns:
+            Dict conținând mesajul keep-alive
+        """
+        return {
+            "tag": self.generate_tag(),
+            "type": "keep_alive"
         }
-        
-        return json.dumps(presence)
-        
-    def process_message(self, message_data: Union[str, bytes]) -> Dict[str, Any]:
+    
+    def process_message(self, message: bytes) -> Tuple[Optional[int], Any]:
         """
-        Process a message received from the WhatsApp server.
+        Procesează un mesaj binar de la server.
         
         Args:
-            message_data: The received message data
+            message: Mesajul binar primit
             
         Returns:
-            A dictionary with parsed message and metadata
-            
-        Raises:
-            ProtocolError: If the message cannot be processed
+            Tuple conținând (tip_mesaj, date_decodate)
         """
         try:
-            # Parse the message
-            if isinstance(message_data, bytes):
-                # Try to decode as UTF-8 text first
-                try:
-                    message_text = message_data.decode('utf-8')
-                except UnicodeDecodeError:
-                    # Handle binary data (possibly encrypted or compressed)
-                    return {
-                        "type": "binary",
-                        "data": message_data,
-                        "timestamp": int(time.time())
-                    }
-            else:
-                message_text = message_data
-                
-            # Parse JSON message
-            message = json.loads(message_text)
+            message_type, decoded_data = decode_binary_message(message)
             
-            # Extract message type and tag
-            message_type = message.get("type", "unknown")
-            message_tag = message.get("tag", "")
+            # Procesează anumite tipuri de mesaje special
+            if message_type == BINARY_TYPE_PAIRING:
+                # Extrage codul de asociere dacă este prezent
+                if isinstance(decoded_data, dict) and decoded_data.get("pairingCode"):
+                    self.pairing_code = decoded_data.get("pairingCode")
+                    logger.info(f"Cod de asociere primit: {self.pairing_code}")
             
-            # Handle specific message types
-            if message_type == "challenge":
-                # This is an authentication challenge
-                logger.info("Received authentication challenge")
-                self.challenge_data = message.get("data", {})
-                return {
-                    "type": "challenge",
-                    "challenge_type": self.challenge_data.get("type", "unknown"),
-                    "tag": message_tag,
-                    "timestamp": int(time.time())
-                }
-                
-            elif message_type == "response":
-                # Check if this is a pairing code response
-                try:
-                    # Different versions of WhatsApp have different response formats
-                    # Try all known formats to extract pairing code
-                    
-                    # Format 1: Direct in data field
-                    if "data" in message and isinstance(message["data"], dict) and "pairingCode" in message["data"]:
-                        self.pairing_code = message["data"]["pairingCode"]
-                    
-                    # Format 2: Nested in result
-                    elif "result" in message and isinstance(message["result"], dict) and "pairingCode" in message["result"]:
-                        self.pairing_code = message["result"]["pairingCode"]
-                    
-                    # Format 3: Check for pairingCode in the message itself
-                    elif "pairingCode" in message:
-                        self.pairing_code = message["pairingCode"]
-                    
-                    # Format 4: Try to find it in any JSON string within the message
-                    elif isinstance(message_text, str) and "pairingCode" in message_text:
-                        # Try to extract using string operations if JSON parsing fails
-                        import re
-                        match = re.search(r'"pairingCode"\s*:\s*"([^"]+)"', message_text)
-                        if match:
-                            self.pairing_code = match.group(1)
-                    
-                    # If we found a pairing code, return it
-                    if self.pairing_code:
-                        logger.info(f"Received pairing code: {self.pairing_code}")
-                        return {
-                            "type": "pairing_code",
-                            "code": self.pairing_code,
-                            "tag": message_tag,
-                            "timestamp": int(time.time())
-                        }
-                        
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.warning(f"Error processing pairing code: {e}")
-                    
-            elif message_type == "connected":
-                # Connection confirmed
-                logger.info("Connection confirmed by server")
-                return {
-                    "type": "connected",
-                    "client_token": message.get("clientToken", ""),
-                    "server_token": message.get("serverToken", ""),
-                    "tag": message_tag,
-                    "timestamp": int(time.time())
-                }
-                
-            elif message_type == "message":
-                # Regular message
-                return {
-                    "type": "message",
-                    "content": message.get("content", {}),
-                    "sender": message.get("sender", ""),
-                    "tag": message_tag,
-                    "timestamp": message.get("timestamp", int(time.time()))
-                }
-                
-            elif message_type == "receipt":
-                # Message receipt
-                return {
-                    "type": "receipt",
-                    "receipt_type": message.get("receipt", ""),
-                    "message_id": message.get("id", ""),
-                    "sender": message.get("sender", ""),
-                    "tag": message_tag,
-                    "timestamp": message.get("timestamp", int(time.time()))
-                }
-                
-            elif message_type == "presence":
-                # Presence update
-                return {
-                    "type": "presence",
-                    "presence_type": message.get("status", ""),
-                    "sender": message.get("sender", ""),
-                    "tag": message_tag,
-                    "timestamp": message.get("timestamp", int(time.time()))
-                }
-                
-            elif message_type == "error":
-                # Error message
-                logger.error(f"Received error from server: {message.get('error', {})}")
-                return {
-                    "type": "error",
-                    "error_code": message.get("error", {}).get("code", 0),
-                    "error_message": message.get("error", {}).get("message", "Unknown error"),
-                    "tag": message_tag,
-                    "timestamp": int(time.time())
-                }
-                
-            # Handle unknown message types
-            logger.debug(f"Unknown message type: {message_type}, data: {message_text[:100]}...")
-            return {
-                "type": message_type,
-                "raw_data": message,
-                "tag": message_tag,
-                "timestamp": int(time.time())
-            }
+            return message_type, decoded_data
             
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse message as JSON: {str(e)}")
-            return {
-                "type": "parse_error",
-                "error": str(e),
-                "raw_data": message_data if isinstance(message_data, str) else "<binary data>",
-                "timestamp": int(time.time())
-            }
         except Exception as e:
-            logger.error(f"Error processing message: {str(e)}")
-            raise ProtocolError(f"Failed to process message: {str(e)}")
-            
-    def create_text_message(self, recipient: str, text: str) -> str:
-        """
-        Create a text message to send.
-        
-        Args:
-            recipient: The recipient's JID (e.g., 1234567890@s.whatsapp.net)
-            text: The message text
-            
-        Returns:
-            JSON string with text message
-        """
-        message_tag = f"{int(time.time())}.--{self.message_counter}"
-        self.message_counter += 1
-        message_id = f"MID.{uuid.uuid4().hex[:8]}"
-        
-        message = {
-            "tag": message_tag,
-            "type": "message",
-            "recipient": recipient,
-            "messageId": message_id,
-            "content": {
-                "type": "text",
-                "text": text
-            },
-            "timestamp": int(time.time())
-        }
-        
-        # Store pending message
-        self.pending_messages[message_tag] = {
-            "id": message_id,
-            "recipient": recipient,
-            "timestamp": int(time.time())
-        }
-        
-        return json.dumps(message)
-        
-    def create_image_message(self, recipient: str, image_data: bytes, caption: Optional[str] = None) -> str:
-        """
-        Create an image message to send.
-        
-        Args:
-            recipient: The recipient's JID (e.g., 1234567890@s.whatsapp.net)
-            image_data: The binary image data
-            caption: Optional text caption for the image
-            
-        Returns:
-            JSON string with image message
-        """
-        message_tag = f"{int(time.time())}.--{self.message_counter}"
-        self.message_counter += 1
-        message_id = f"MID.{uuid.uuid4().hex[:8]}"
-        
-        # Convert image to base64
-        image_base64 = base64.b64encode(image_data).decode('utf-8')
-        
-        message = {
-            "tag": message_tag,
-            "type": "message",
-            "recipient": recipient,
-            "messageId": message_id,
-            "content": {
-                "type": "image",
-                "image": image_base64,
-                "caption": caption if caption else ""
-            },
-            "timestamp": int(time.time())
-        }
-        
-        # Store pending message
-        self.pending_messages[message_tag] = {
-            "id": message_id,
-            "recipient": recipient,
-            "timestamp": int(time.time())
-        }
-        
-        return json.dumps(message)
-        
-    def create_disconnect_message(self) -> str:
-        """
-        Create a disconnect message to gracefully end the session.
-        
-        Returns:
-            JSON string with disconnect message
-        """
-        message_tag = f"disconnect--{int(time.time())}"
-        
-        disconnect = {
-            "tag": message_tag,
-            "type": "disconnect",
-            "reason": "USER_INITIATED",
-            "timestamp": int(time.time())
-        }
-        
-        return json.dumps(disconnect)
+            logger.error(f"Eroare la procesarea mesajului: {str(e)}")
+            return None, message

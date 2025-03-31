@@ -1,44 +1,29 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testare - Bocksup</title>
-    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <title>Test Conexiune - Bocksup</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <style>
         .jumbotron {
             padding: 2rem 1rem;
-            margin-bottom: 2rem;
-            background-color: var(--bs-dark);
+            background-color: var(--bs-secondary-bg);
             border-radius: 0.3rem;
+            margin-bottom: 2rem;
         }
-        pre {
-            background-color: #212529;
-            color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.25rem;
-            overflow-x: auto;
-            max-height: 400px;
-        }
-        .test-card {
-            margin-bottom: 1.5rem;
-        }
-        .test-result {
-            margin-top: 1rem;
-            display: none;
-        }
-        .code-block {
-            font-family: monospace;
-            background-color: #2d3238;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
+        #results {
+            max-height: 500px;
+            overflow-y: auto;
         }
     </style>
 </head>
-<body>
+<body data-bs-theme="dark">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">Bocksup</a>
+            <a class="navbar-brand" href="/">
+                <strong>Bocksup</strong>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -54,153 +39,115 @@
                         <a class="nav-link" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/pairing">Cod de asociere</a>
+                        <a class="nav-link" href="/examples">Exemple</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/test">Testare</a>
+                        <a class="nav-link active" href="/test">Test</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/pairing">Asociere</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/debug">Debug</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="jumbotron text-center">
-        <div class="container">
-            <h1 class="display-4">Testare Bocksup</h1>
-            <p class="lead">Verificați funcționalitatea bibliotecii Bocksup</p>
+    <div class="container mt-4">
+        <div class="jumbotron">
+            <h1 class="display-4">Test Conexiune</h1>
+            <p class="lead">Verificați conectivitatea cu serverele WhatsApp</p>
+            <hr class="my-4">
+            <p>Această pagină vă permite să testați dacă biblioteca Bocksup poate conecta cu succes la serverele WhatsApp și să efectueze un handshake inițial.</p>
         </div>
-    </div>
 
-    <div class="container my-5">
         <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div class="alert alert-info" role="alert">
-                    <h4 class="alert-heading">Testare bibliotecă</h4>
-                    <p>Această pagină permite testarea diferitelor componente ale bibliotecii Bocksup pentru a verifica funcționalitatea și conexiunea cu serverele WhatsApp.</p>
-                    <p class="mb-0">Selectați un test din opțiunile de mai jos și verificați rezultatele.</p>
-                </div>
-            </div>
-            
-            <div class="col-lg-6">
-                <div class="card test-card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Test conexiune server</h5>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        Testare conexiune
                     </div>
                     <div class="card-body">
-                        <p>Verifică dacă biblioteca se poate conecta la serverele WhatsApp și poate stabili un handshake inițial.</p>
-                        <button id="connectionTestBtn" class="btn btn-primary">Rulează test</button>
-                        
-                        <div id="connectionTestResult" class="test-result">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="spinner-border text-primary me-2" role="status" id="connectionTestSpinner">
-                                    <span class="visually-hidden">Se încarcă...</span>
-                                </div>
-                                <h6 class="mb-0" id="connectionTestStatus">Rulare test...</h6>
+                        <form id="testForm">
+                            <div class="mb-3">
+                                <label for="phone_number" class="form-label">Număr de telefon (opțional)</label>
+                                <input type="text" class="form-control" id="phone_number" placeholder="Exemplu: 40748427351">
+                                <div class="form-text">Dacă introduceți un număr de telefon, vom testa și funcționalitatea de solicitare a codului de asociere.</div>
                             </div>
-                            <pre id="connectionTestOutput" class="mt-3"></pre>
-                        </div>
+                            <button type="submit" id="testButton" class="btn btn-primary">
+                                Testează conexiunea
+                                <span id="testSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                        </form>
                     </div>
                 </div>
                 
-                <div class="card test-card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Test modul criptare</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Testează funcționalitatea modulului de criptare end-to-end folosit pentru mesaje.</p>
-                        <button id="encryptionTestBtn" class="btn btn-success">Rulează test</button>
-                        
-                        <div id="encryptionTestResult" class="test-result">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="spinner-border text-success me-2" role="status" id="encryptionTestSpinner">
-                                    <span class="visually-hidden">Se încarcă...</span>
-                                </div>
-                                <h6 class="mb-0" id="encryptionTestStatus">Rulare test...</h6>
-                            </div>
-                            <pre id="encryptionTestOutput" class="mt-3"></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-6">
-                <div class="card test-card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Test solicitare cod de asociere</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Verifică dacă biblioteca poate solicita un cod de asociere pentru un număr de telefon.</p>
-                        <div class="mb-3">
-                            <label for="pairingPhoneNumber" class="form-label">Număr de telefon</label>
-                            <input type="text" class="form-control" id="pairingPhoneNumber" placeholder="Exemplu: 40748427351">
-                            <div class="form-text">Numărul trebuie introdus fără + sau alte caractere speciale.</div>
-                        </div>
-                        <button id="pairingTestBtn" class="btn btn-info">Rulează test</button>
-                        
-                        <div id="pairingTestResult" class="test-result">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="spinner-border text-info me-2" role="status" id="pairingTestSpinner">
-                                    <span class="visually-hidden">Se încarcă...</span>
-                                </div>
-                                <h6 class="mb-0" id="pairingTestStatus">Rulare test...</h6>
-                            </div>
-                            <pre id="pairingTestOutput" class="mt-3"></pre>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card test-card">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">Verificare versiune și dependențe</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Verifică versiunea curentă a bibliotecii și dependențele instalate.</p>
-                        <button id="versionTestBtn" class="btn btn-warning">Rulează test</button>
-                        
-                        <div id="versionTestResult" class="test-result">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="spinner-border text-warning me-2" role="status" id="versionTestSpinner">
-                                    <span class="visually-hidden">Se încarcă...</span>
-                                </div>
-                                <h6 class="mb-0" id="versionTestStatus">Rulare test...</h6>
-                            </div>
-                            <pre id="versionTestOutput" class="mt-3"></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="row mt-4">
-            <div class="col-lg-12">
                 <div class="card">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">Cod de testare personalizat</h5>
+                    <div class="card-header">
+                        Rezultate test
                     </div>
                     <div class="card-body">
-                        <p>Introduceți și rulați cod Python personalizat pentru a testa funcționalitatea specifică din biblioteca Bocksup.</p>
-                        <div class="mb-3">
-                            <label for="customCode" class="form-label">Cod Python</label>
-                            <textarea class="form-control font-monospace" id="customCode" rows="8">import asyncio
-import bocksup
+                        <div id="testSummary" class="d-none">
+                            <h5>Sumar</h5>
+                            <ul class="list-group mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" id="connection_status">
+                                    Conexiune
+                                    <span class="badge bg-secondary">N/A</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" id="handshake_status">
+                                    Handshake
+                                    <span class="badge bg-secondary">N/A</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" id="challenge_status">
+                                    Challenge
+                                    <span class="badge bg-secondary">N/A</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center d-none" id="pairing_status">
+                                    Cod asociere
+                                    <span class="badge bg-secondary">N/A</span>
+                                </li>
+                            </ul>
 
-async def main():
-    # Funcția de testare aici
-    result = await bocksup.test_server_connection()
-    print(f"Rezultat: {result}")
-
-asyncio.run(main())</textarea>
-                        </div>
-                        <button id="customTestBtn" class="btn btn-secondary">Rulează cod</button>
-                        
-                        <div id="customTestResult" class="test-result">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="spinner-border text-secondary me-2" role="status" id="customTestSpinner">
-                                    <span class="visually-hidden">Se încarcă...</span>
-                                </div>
-                                <h6 class="mb-0" id="customTestStatus">Rulare cod...</h6>
+                            <div id="error_container" class="d-none alert alert-danger">
+                                <h5>Erori</h5>
+                                <ul id="errors_list">
+                                </ul>
                             </div>
-                            <pre id="customTestOutput" class="mt-3"></pre>
+                        </div>
+                        <div id="testInProgress" class="text-center d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Se încarcă...</span>
+                            </div>
+                            <p class="mt-2">Test în desfășurare, vă rugăm așteptați...</p>
+                        </div>
+                        <div id="noTestRun" class="">
+                            <p class="text-muted text-center">Niciun test nu a fost rulat încă.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Mesaje schimbate cu serverul
+                    </div>
+                    <div class="card-body" id="results">
+                        <div id="resultsContent" class="d-none">
+                            <div id="messages_container">
+                                <p class="text-muted text-center" id="noMessages">Niciun mesaj încă.</p>
+                            </div>
+                        </div>
+                        <div id="messagesInProgress" class="text-center d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Se încarcă...</span>
+                            </div>
+                            <p class="mt-2">Așteptare mesaje...</p>
+                        </div>
+                        <div id="noMessages" class="">
+                            <p class="text-muted text-center">Rulați un test pentru a vedea mesajele.</p>
                         </div>
                     </div>
                 </div>
@@ -208,131 +155,203 @@ asyncio.run(main())</textarea>
         </div>
     </div>
 
-    <footer class="bg-dark text-light py-4 mt-5">
+    <footer class="mt-5 py-3 bg-dark text-center">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Bocksup</h5>
-                    <p>O bibliotecă modernă pentru integrarea cu WhatsApp</p>
-                    <p>Versiune: 0.2.0 | Licență: MIT</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>© 2025 Bocksup | Toate drepturile rezervate</p>
-                    <p>
-                        <a href="https://github.com/gyovannyvpn123/Bowsup-Whatsap-library" class="text-light me-3">GitHub</a>
-                        <a href="/docs" class="text-light me-3">Documentație</a>
-                        <a href="/about" class="text-light">Despre</a>
-                    </p>
-                </div>
-            </div>
+            <p class="text-muted mb-0">Bocksup © 2025 - O bibliotecă Python pentru integrare WhatsApp</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Test conexiune server
-            document.getElementById('connectionTestBtn').addEventListener('click', function() {
-                runTest('connection', '/api/run-test/connection');
-            });
+            const testForm = document.getElementById('testForm');
+            const testButton = document.getElementById('testButton');
+            const testSpinner = document.getElementById('testSpinner');
+            const testSummary = document.getElementById('testSummary');
+            const noTestRun = document.getElementById('noTestRun');
+            const testInProgress = document.getElementById('testInProgress');
+            const resultsContent = document.getElementById('resultsContent');
+            const noMessages = document.getElementById('noMessages');
+            const messagesInProgress = document.getElementById('messagesInProgress');
             
-            // Test criptare
-            document.getElementById('encryptionTestBtn').addEventListener('click', function() {
-                runTest('encryption', '/api/run-test/encryption');
-            });
+            // Status elements
+            const connectionStatus = document.getElementById('connection_status');
+            const handshakeStatus = document.getElementById('handshake_status');
+            const challengeStatus = document.getElementById('challenge_status');
+            const pairingStatus = document.getElementById('pairing_status');
+            const errorContainer = document.getElementById('error_container');
+            const errorsList = document.getElementById('errors_list');
+            const messagesContainer = document.getElementById('messages_container');
             
-            // Test cod de asociere
-            document.getElementById('pairingTestBtn').addEventListener('click', function() {
-                const phoneNumber = document.getElementById('pairingPhoneNumber').value.trim();
-                if (!phoneNumber || phoneNumber.length < 10) {
-                    alert('Introduceți un număr de telefon valid');
-                    return;
+            // Form submission
+            testForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get phone number
+                const phoneNumber = document.getElementById('phone_number').value.trim();
+                
+                // Show pairing status if phone number provided
+                if (phoneNumber) {
+                    pairingStatus.classList.remove('d-none');
+                } else {
+                    pairingStatus.classList.add('d-none');
                 }
                 
-                runTest('pairing', '/api/run-test/pairing', { phone_number: phoneNumber });
-            });
-            
-            // Test versiune
-            document.getElementById('versionTestBtn').addEventListener('click', function() {
-                runTest('version', '/api/run-test/version');
-            });
-            
-            // Test personalizat
-            document.getElementById('customTestBtn').addEventListener('click', function() {
-                const code = document.getElementById('customCode').value.trim();
-                if (!code) {
-                    alert('Introduceți cod Python pentru rulare');
-                    return;
-                }
+                // Reset UI
+                resetTestUI();
                 
-                runTest('custom', '/api/run-test/custom', { code: code });
-            });
-            
-            // Funcție pentru rularea testelor
-            function runTest(testType, endpoint, data = {}) {
-                const resultContainer = document.getElementById(`${testType}TestResult`);
-                const spinner = document.getElementById(`${testType}TestSpinner`);
-                const status = document.getElementById(`${testType}TestStatus`);
-                const output = document.getElementById(`${testType}TestOutput`);
+                // Show loading state
+                testButton.disabled = true;
+                testSpinner.classList.remove('d-none');
+                noTestRun.classList.add('d-none');
+                testInProgress.classList.remove('d-none');
+                noMessages.classList.add('d-none');
+                messagesInProgress.classList.remove('d-none');
                 
-                // Arată rezultat și resetează
-                resultContainer.style.display = 'block';
-                spinner.style.display = 'inline-block';
-                status.textContent = 'Rulare test...';
-                output.textContent = '';
-                
-                // Mock pentru demonstrație - ar trebui să fie un apel API real
-                setTimeout(() => {
-                    spinner.style.display = 'none';
-                    
-                    if (testType === 'connection') {
-                        status.textContent = 'Test finalizat cu succes';
-                        output.textContent = JSON.stringify({
-                            "connection": true,
-                            "handshake": true, 
-                            "challenge": false,
-                            "messages": [
-                                {"direction": "sent", "type": "handshake", "content": "..."},
-                                {"direction": "received", "content_type": "binary", "size": 33}
-                            ],
-                            "errors": []
-                        }, null, 2);
-                    } else if (testType === 'encryption') {
-                        status.textContent = 'Test finalizat cu succes';
-                        output.textContent = "Testare modul de criptare...\n\nGenerare chei: Succes\nCriptare mesaj de test: Succes\nDecriptare mesaj de test: Succes\nVerificare integritate: Succes\n\nModulul de criptare funcționează corect.";
-                    } else if (testType === 'pairing') {
-                        status.textContent = 'Nu s-a putut obține codul de asociere';
-                        output.textContent = `Solicitare cod de asociere pentru numărul ${data.phone_number}:\n\nConexiune la server: Succes\nHandshake inițial: Succes\nSolicitare cod: Eșuată (Text Frames are not supported)\n\nVerificați telefonul pentru a vedea dacă a fost trimis un cod de asociere.`;
-                    } else if (testType === 'version') {
-                        status.textContent = 'Test finalizat cu succes';
-                        output.textContent = "Bocksup versiune: 0.2.0\n\nDependențe instalate:\n- websockets==12.0\n- aiohttp==3.8.5\n- pycryptodome==3.19.0\n- construct==2.10.68\n- email-validator==2.1.0\n\nToate dependențele necesare sunt instalate.";
-                    } else if (testType === 'custom') {
-                        status.textContent = 'Cod executat cu succes';
-                        output.textContent = `Executing custom code...\n\nRezultat: {'connection': True, 'handshake': True, 'challenge': False, 'pairing_code': False, 'messages': [...], 'errors': []}\n\nExecuție finalizată cu succes.`;
-                    }
-                }, 2000);
-                
-                // Aceasta este doar o simulare. În implementarea reală, ai face un apel la backend:
-                /*
-                fetch(endpoint, {
+                // Send API request
+                fetch('/api/test-connection', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        phone_number: phoneNumber || null
+                    }),
                 })
                 .then(response => response.json())
                 .then(data => {
-                    spinner.style.display = 'none';
-                    status.textContent = data.success ? 'Test finalizat cu succes' : 'Test eșuat';
-                    output.textContent = data.output || JSON.stringify(data, null, 2);
+                    // Hide loading state
+                    testButton.disabled = false;
+                    testSpinner.classList.add('d-none');
+                    testInProgress.classList.add('d-none');
+                    testSummary.classList.remove('d-none');
+                    messagesInProgress.classList.add('d-none');
+                    resultsContent.classList.remove('d-none');
+                    
+                    if (data.success) {
+                        const results = data.results;
+                        
+                        // Update status badges
+                        updateStatusBadge(connectionStatus, results.connection);
+                        updateStatusBadge(handshakeStatus, results.handshake);
+                        updateStatusBadge(challengeStatus, results.challenge);
+                        
+                        if (phoneNumber) {
+                            updateStatusBadge(pairingStatus, results.pairing_code);
+                        }
+                        
+                        // Display errors if any
+                        if (results.errors && results.errors.length > 0) {
+                            errorContainer.classList.remove('d-none');
+                            errorsList.innerHTML = '';
+                            
+                            results.errors.forEach(error => {
+                                const li = document.createElement('li');
+                                li.textContent = error;
+                                errorsList.appendChild(li);
+                            });
+                        } else {
+                            errorContainer.classList.add('d-none');
+                        }
+                        
+                        // Display messages
+                        displayMessages(results.messages);
+                        
+                    } else {
+                        // Show error
+                        errorContainer.classList.remove('d-none');
+                        errorsList.innerHTML = '';
+                        
+                        const li = document.createElement('li');
+                        li.textContent = data.error || 'Eroare nespecificată la testare';
+                        errorsList.appendChild(li);
+                        
+                        // Reset status badges
+                        resetStatusBadges();
+                    }
                 })
                 .catch(error => {
-                    spinner.style.display = 'none';
-                    status.textContent = 'Eroare la executarea testului';
-                    output.textContent = 'Eroare: ' + error.message;
+                    // Hide loading state
+                    testButton.disabled = false;
+                    testSpinner.classList.add('d-none');
+                    testInProgress.classList.add('d-none');
+                    testSummary.classList.remove('d-none');
+                    messagesInProgress.classList.add('d-none');
+                    
+                    // Show error
+                    errorContainer.classList.remove('d-none');
+                    errorsList.innerHTML = '';
+                    
+                    const li = document.createElement('li');
+                    li.textContent = 'Eroare la procesarea cererii: ' + error.message;
+                    errorsList.appendChild(li);
+                    
+                    // Reset status badges
+                    resetStatusBadges();
                 });
-                */
+            });
+            
+            function resetTestUI() {
+                // Reset status badges
+                resetStatusBadges();
+                
+                // Clear error list
+                errorContainer.classList.add('d-none');
+                errorsList.innerHTML = '';
+                
+                // Clear messages
+                messagesContainer.innerHTML = '<p class="text-muted text-center" id="noMessages">Niciun mesaj încă.</p>';
+            }
+            
+            function resetStatusBadges() {
+                // Reset all status badges to N/A
+                const statuses = [connectionStatus, handshakeStatus, challengeStatus, pairingStatus];
+                
+                statuses.forEach(status => {
+                    const badge = status.querySelector('.badge');
+                    badge.className = 'badge bg-secondary';
+                    badge.textContent = 'N/A';
+                });
+            }
+            
+            function updateStatusBadge(element, value) {
+                const badge = element.querySelector('.badge');
+                
+                if (value === true) {
+                    badge.className = 'badge bg-success';
+                    badge.textContent = '✓';
+                } else {
+                    badge.className = 'badge bg-danger';
+                    badge.textContent = '✗';
+                }
+            }
+            
+            function displayMessages(messages) {
+                messagesContainer.innerHTML = '';
+                
+                if (!messages || messages.length === 0) {
+                    messagesContainer.innerHTML = '<p class="text-muted text-center">Niciun mesaj schimbat.</p>';
+                    return;
+                }
+                
+                messages.forEach((msg, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card mb-3';
+                    
+                    // Color based on direction
+                    const headerClass = msg.direction === 'sent' ? 'bg-primary' : 'bg-info';
+                    
+                    card.innerHTML = `
+                        <div class="card-header ${headerClass} text-white">
+                            ${msg.direction === 'sent' ? 'Trimis' : 'Primit'}: ${msg.type}
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0"><code>${msg.content}</code></pre>
+                        </div>
+                    `;
+                    
+                    messagesContainer.appendChild(card);
+                });
             }
         });
     </script>

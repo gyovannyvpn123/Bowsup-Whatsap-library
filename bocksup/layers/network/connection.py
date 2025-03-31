@@ -1,593 +1,525 @@
 """
-Network connection management for WhatsApp servers.
+Conexiune la serverele WhatsApp.
+
+Acest modul gestionează conexiunea WebSocket la serverele WhatsApp,
+inclusiv handshake-ul inițial, autentificarea și mesajele.
 """
 
-import logging
 import asyncio
-import ssl
 import time
 import json
-from typing import Optional, Callable, Dict, Any, Union, List, Tuple
+import random
+import logging
+import uuid
+from typing import Dict, Any, Optional, Union, Callable, List, Tuple, NoReturn
 
+# Biblioteci externe
 import aiohttp
 import websockets
-from websockets.exceptions import WebSocketException
+from websockets.exceptions import ConnectionClosed
 
-from bocksup.common.exceptions import ConnectionError, TimeoutError
-from bocksup.common.constants import (
-    WHATSAPP_SERVER,
-    WHATSAPP_PORT,
-    WHATSAPP_WEBSOCKET_URL,
-    CONNECT_TIMEOUT,
-    READ_TIMEOUT,
-    PING_INTERVAL
+# Module Bocksup
+from ...common.constants import (
+    WA_WEBSOCKET_URL,
+    CONN_STATE_DISCONNECTED,
+    CONN_STATE_CONNECTING,
+    CONN_STATE_CONNECTED,
+    CONN_STATE_AUTHENTICATED,
+    CONN_STATE_ERROR,
+    BINARY_TYPE_HANDSHAKE,
+    BINARY_TYPE_JSON,
+    BINARY_TYPE_CHALLENGE,
+    KEEP_ALIVE_INTERVAL,
+    CONNECTION_TIMEOUT
 )
-from bocksup.layers.interface.layer import Layer
+from ...common.exceptions import ConnectionError, ProtocolError, BocksupError
+from ..protocol.websocket_protocol import WebSocketProtocol
+from ...utils.binary_utils import (
+    encode_binary_message,
+    decode_binary_message,
+    encode_json_message_binary
+)
 
 logger = logging.getLogger(__name__)
 
-class Connection(Layer):
+class WhatsAppConnection:
     """
-    Manages the network connection to WhatsApp servers.
+    Gestionează conexiunea WebSocket la serverele WhatsApp.
     
-    This layer handles the low-level details of establishing and maintaining
-    a connection to WhatsApp servers, including reconnection logic and
-    heartbeat messages.
+    Această clasă implementează conexiunea la nivel de rețea,
+    gestionând WebSocket-uri, recuperare la erori, și trimiterea
+    mesajelor formulate corespunzător.
     """
     
-    def __init__(self, use_websocket: bool = True):
+    def __init__(self, session_id: str = None, url: str = WA_WEBSOCKET_URL,
+                 client_token: str = None, server_token: str = None):
         """
-        Initialize the connection layer.
+        Inițializează o conexiune la serverele WhatsApp.
         
         Args:
-            use_websocket: Whether to use WebSocket connection (True) or TCP (False)
+            session_id: Identificator de sesiune unic, generat automat dacă nu este specificat
+            url: URL-ul serverului WebSocket WhatsApp
+            client_token: Token client opțional pentru reconectare
+            server_token: Token server opțional pentru reconectare
         """
-        super().__init__("NetworkLayer")
-        self.use_websocket = use_websocket
-        self.connected = False
-        self.socket = None
-        self.websocket = None
-        self.reader = None
-        self.writer = None
-        self.connect_timeout = CONNECT_TIMEOUT
-        self.read_timeout = READ_TIMEOUT
-        self.ping_interval = PING_INTERVAL
-        self.ping_task = None
-        self.read_task = None
-        self.last_activity = 0
-        self._reconnect_attempts = 0
-        self._max_reconnect_attempts = 5
-        self._reconnect_delay = 5  # seconds
-        self._custom_headers = {}
+        self.connection_id = session_id or f"bocksup_ws_{uuid.uuid4().hex[:8]}"
+        self.server_url = url
+        self.client_token = client_token
+        self.server_token = server_token
         
+        # Stare conexiune
+        self.connection_state = CONN_STATE_DISCONNECTED
+        self.is_connected = False
+        self.last_activity = 0
+        
+        # Resurse conexiune
+        self._websocket = None
+        self._keepalive_task = None
+        self._message_handler_task = None
+        
+        # Callbacks
+        self._message_callbacks = {}
+        self._challenge_callback = None
+        self._on_connect_callback = None
+        self._on_disconnect_callback = None
+        
+        # Protocol
+        self.protocol = WebSocketProtocol(client_id=self.connection_id)
+    
     async def connect(self) -> bool:
         """
-        Establish a connection to the WhatsApp server.
+        Conectare la serverul WhatsApp.
         
         Returns:
-            bool: True if connection was successful
+            bool: True dacă conexiunea a fost stabilită cu succes
             
         Raises:
-            ConnectionError: If connection fails
+            ConnectionError: Dacă nu se poate conecta la server
         """
-        if self.connected:
-            logger.debug("Already connected, disconnecting first")
-            await self.disconnect()
-            
-        logger.info(f"Connecting to WhatsApp server using {'WebSocket' if self.use_websocket else 'TCP'}")
+        if self.is_connected:
+            logger.warning(f"[{self.connection_id}] Deja conectat la server")
+            return True
+        
+        self.connection_state = CONN_STATE_CONNECTING
         
         try:
-            if self.use_websocket:
-                await self._connect_websocket()
-            else:
-                await self._connect_tcp()
-                
-            self.connected = True
+            logger.info(f"[{self.connection_id}] Conectare la {self.server_url}...")
+            
+            # Deschidere WebSocket
+            self._websocket = await websockets.connect(
+                self.server_url,
+                extra_headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+                    "Origin": "https://web.whatsapp.com",
+                    "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7"
+                },
+                ping_interval=20,
+                ping_timeout=30,
+                close_timeout=10
+            )
+            
+            # Actualizare stare
+            self.connection_state = CONN_STATE_CONNECTED
+            self.is_connected = True
             self.last_activity = time.time()
-            self._reconnect_attempts = 0
             
-            # Start background tasks
-            self._start_ping_task()
-            self._start_read_task()
+            logger.info(f"[{self.connection_id}] Conectat cu succes la server")
             
-            logger.info("Successfully connected to WhatsApp server")
+            # Start message handler
+            self._message_handler_task = asyncio.create_task(self._message_handler())
+            
+            # Start keepalive
+            self._keepalive_task = asyncio.create_task(self._keepalive_loop())
+            
+            # Apelare callback conectare dacă există
+            if self._on_connect_callback:
+                await self._on_connect_callback()
+            
             return True
             
-        except (asyncio.TimeoutError, aiohttp.ClientError, WebSocketException, OSError) as e:
-            logger.error(f"Failed to connect: {str(e)}")
-            await self._handle_connection_failure(e)
-            return False
+        except Exception as e:
+            logger.error(f"[{self.connection_id}] Eroare la conectare: {str(e)}")
+            self.connection_state = CONN_STATE_ERROR
+            self.is_connected = False
             
-    async def _connect_websocket(self):
-        """
-        Establish a WebSocket connection to WhatsApp.
-        
-        Raises:
-            ConnectionError: If connection fails
-        """
-        try:
-            # Prepare connection headers
-            from bocksup.common.constants import USER_AGENT, WHATSAPP_WEBSOCKET_URL, WHATSAPP_WEBSOCKET_ORIGIN
-            
-            headers = {
-                'User-Agent': USER_AGENT,
-                'Origin': WHATSAPP_WEBSOCKET_ORIGIN,
-                'Sec-WebSocket-Protocol': 'chat',
-                'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Pragma': 'no-cache',
-                'Cache-Control': 'no-cache'
-            }
-            headers.update(self._custom_headers)
-            
-            # Connect with timeout
-            self.websocket = await asyncio.wait_for(
-                websockets.connect(
-                    WHATSAPP_WEBSOCKET_URL,
-                    extra_headers=headers,
-                    ping_interval=None,  # We'll handle pings manually
-                    ping_timeout=None,
-                    close_timeout=10,
-                    max_size=None,  # No limit on message size
-                    compression=None  # We'll handle compression manually
-                ),
-                timeout=self.connect_timeout
-            )
-            
-        except (asyncio.TimeoutError, WebSocketException, OSError) as e:
-            raise ConnectionError(f"WebSocket connection failed: {str(e)}")
-            
-    async def _connect_tcp(self):
-        """
-        Establish a TCP connection to WhatsApp.
-        
-        Raises:
-            ConnectionError: If connection fails
-        """
-        try:
-            # Create SSL context for secure connection
-            ssl_context = ssl.create_default_context()
-            
-            # Connect with timeout
-            connection_task = asyncio.open_connection(
-                WHATSAPP_SERVER,
-                WHATSAPP_PORT,
-                ssl=ssl_context
-            )
-            
-            self.reader, self.writer = await asyncio.wait_for(
-                connection_task,
-                timeout=self.connect_timeout
-            )
-            
-        except (asyncio.TimeoutError, OSError) as e:
-            raise ConnectionError(f"TCP connection failed: {str(e)}")
-            
+            raise ConnectionError(f"Failed to connect to WhatsApp server: {str(e)}")
+    
     async def disconnect(self) -> None:
         """
-        Disconnect from the WhatsApp server.
+        Deconectare de la serverul WhatsApp.
         """
-        if not self.connected:
-            logger.debug("Already disconnected")
-            return
-            
-        logger.info("Disconnecting from WhatsApp server")
-        
-        # Cancel background tasks
-        if self.ping_task and not self.ping_task.done():
-            self.ping_task.cancel()
-            
-        if self.read_task and not self.read_task.done():
-            self.read_task.cancel()
-            
         try:
-            # Close WebSocket connection
-            if self.websocket:
-                await self.websocket.close()
-                self.websocket = None
-                
-            # Close TCP connection
-            if self.writer:
-                self.writer.close()
+            logger.info(f"[{self.connection_id}] Deconectare...")
+            
+            # Anulare task-uri
+            if self._keepalive_task:
+                self._keepalive_task.cancel()
                 try:
-                    await self.writer.wait_closed()
-                except Exception:
+                    await self._keepalive_task
+                except asyncio.CancelledError:
                     pass
-                self.writer = None
-                self.reader = None
+                self._keepalive_task = None
+            
+            if self._message_handler_task:
+                self._message_handler_task.cancel()
+                try:
+                    await self._message_handler_task
+                except asyncio.CancelledError:
+                    pass
+                self._message_handler_task = None
+            
+            # Închidere WebSocket
+            if self._websocket:
+                await self._websocket.close()
+                self._websocket = None
+            
+            # Actualizare stare
+            self.connection_state = CONN_STATE_DISCONNECTED
+            self.is_connected = False
+            
+            logger.info(f"[{self.connection_id}] Deconectat de la server")
+            
+            # Apelare callback deconectare dacă există
+            if self._on_disconnect_callback:
+                await self._on_disconnect_callback()
                 
         except Exception as e:
-            logger.warning(f"Error during disconnect: {str(e)}")
-            
-        finally:
-            self.connected = False
-            
-    async def send(self, data: Union[bytes, str, Dict[str, Any]]) -> bool:
+            logger.error(f"[{self.connection_id}] Eroare la deconectare: {str(e)}")
+            self.connection_state = CONN_STATE_ERROR
+    
+    async def _keepalive_loop(self) -> NoReturn:
         """
-        Send data to the WhatsApp server.
+        Buclă pentru trimiterea mesajelor keep-alive periodice.
         
-        Args:
-            data: Data to send (bytes, string, or dict that will be JSON-encoded)
-            
-        Returns:
-            bool: True if send was successful
-            
-        Raises:
-            ConnectionError: If send fails or not connected
-        """
-        if not self.connected:
-            raise ConnectionError("Not connected to WhatsApp server")
-            
-        try:
-            # Convert data to appropriate format
-            if isinstance(data, dict):
-                data = json.dumps(data).encode('utf-8')
-            elif isinstance(data, str):
-                data = data.encode('utf-8')
-                
-            # Send data based on connection type
-            if self.use_websocket:
-                await self.websocket.send(data)
-            else:
-                self.writer.write(data)
-                await self.writer.drain()
-                
-            self.last_activity = time.time()
-            return True
-            
-        except (WebSocketException, OSError, asyncio.CancelledError) as e:
-            logger.error(f"Error sending data: {str(e)}")
-            await self._handle_connection_failure(e)
-            return False
-            
-    async def receive(self, timeout: Optional[float] = None) -> bytes:
-        """
-        Receive data from the WhatsApp server.
-        
-        Args:
-            timeout: Timeout in seconds (None for default)
-            
-        Returns:
-            bytes: Received data
-            
-        Raises:
-            ConnectionError: If receive fails or not connected
-            TimeoutError: If receive times out
-        """
-        if not self.connected:
-            raise ConnectionError("Not connected to WhatsApp server")
-            
-        timeout = timeout or self.read_timeout
-        
-        try:
-            # Receive data based on connection type
-            if self.use_websocket:
-                data = await asyncio.wait_for(
-                    self.websocket.recv(),
-                    timeout=timeout
-                )
-                
-                # Convert string to bytes if necessary
-                if isinstance(data, str):
-                    data = data.encode('utf-8')
-                    
-            else:
-                data = await asyncio.wait_for(
-                    self.reader.read(8192),  # Read up to 8KB at a time
-                    timeout=timeout
-                )
-                
-                if not data:  # Empty data means the connection was closed
-                    raise ConnectionError("Connection closed by server")
-                    
-            self.last_activity = time.time()
-            return data
-            
-        except asyncio.TimeoutError:
-            logger.warning(f"Receive timeout after {timeout} seconds")
-            raise TimeoutError(f"Receive timeout after {timeout} seconds")
-            
-        except (WebSocketException, OSError, asyncio.CancelledError) as e:
-            logger.error(f"Error receiving data: {str(e)}")
-            await self._handle_connection_failure(e)
-            raise ConnectionError(f"Error receiving data: {str(e)}")
-            
-    def _start_ping_task(self) -> None:
-        """
-        Start a background task to send periodic pings to keep the connection alive.
-        """
-        if self.ping_task and not self.ping_task.done():
-            self.ping_task.cancel()
-            
-        self.ping_task = asyncio.create_task(self._ping_loop())
-        
-    def _start_read_task(self) -> None:
-        """
-        Start a background task to continuously read from the connection.
-        """
-        if self.read_task and not self.read_task.done():
-            self.read_task.cancel()
-            
-        self.read_task = asyncio.create_task(self._read_loop())
-        
-    async def _ping_loop(self) -> None:
-        """
-        Background task that sends periodic pings to keep the connection alive.
+        Această funcție rulează în fundal și trimite mesaje keep-alive
+        pentru a menține conexiunea deschisă.
         """
         try:
-            while self.connected:
-                # Check if we need to send a ping
-                time_since_activity = time.time() - self.last_activity
+            while self.is_connected:
+                # Verifică dacă a trecut suficient timp de la ultima activitate
+                current_time = time.time()
+                time_since_last_activity = current_time - self.last_activity
                 
-                if time_since_activity >= self.ping_interval:
-                    logger.debug("Sending ping to keep connection alive")
+                if time_since_last_activity >= KEEP_ALIVE_INTERVAL:
+                    # Trimite mesaj keep-alive
+                    try:
+                        keepalive_message = self.protocol.create_keep_alive()
+                        await self.send_message(keepalive_message)
+                        logger.debug(f"[{self.connection_id}] Mesaj keep-alive trimis")
+                    except Exception as e:
+                        logger.error(f"[{self.connection_id}] Eroare la trimiterea mesajului keep-alive: {str(e)}")
+                
+                # Așteaptă înainte de următoarea verificare
+                await asyncio.sleep(5)
+                
+        except asyncio.CancelledError:
+            # Task anulat, se iese din buclă
+            logger.debug(f"[{self.connection_id}] Buclă keep-alive oprită")
+        except Exception as e:
+            logger.error(f"[{self.connection_id}] Eroare în bucla keep-alive: {str(e)}")
+    
+    async def _message_handler(self) -> NoReturn:
+        """
+        Buclă pentru procesarea mesajelor primite de la server.
+        
+        Această funcție rulează în fundal și procesează toate mesajele
+        primite de la serverul WhatsApp.
+        """
+        try:
+            while self.is_connected and self._websocket:
+                try:
+                    # Primire mesaj
+                    message = await asyncio.wait_for(
+                        self._websocket.recv(),
+                        timeout=CONNECTION_TIMEOUT
+                    )
                     
-                    if self.use_websocket:
-                        # For WebSockets, use the ping protocol
-                        pong_waiter = await self.websocket.ping()
-                        await asyncio.wait_for(pong_waiter, timeout=5)
-                    else:
-                        # For TCP, send an application-level ping
-                        ping_data = {'type': 'ping', 'timestamp': int(time.time())}
-                        await self.send(ping_data)
-                        
+                    # Actualizare timestamp activitate
                     self.last_activity = time.time()
                     
-                # Wait before checking again
-                await asyncio.sleep(min(self.ping_interval, 15))
-                
-        except asyncio.CancelledError:
-            logger.debug("Ping task cancelled")
-        except Exception as e:
-            logger.error(f"Error in ping loop: {str(e)}")
-            await self._handle_connection_failure(e)
-            
-    async def _read_loop(self) -> None:
-        """
-        Background task that continuously reads from the connection.
-        """
-        try:
-            while self.connected:
-                try:
-                    data = await self.receive()
+                    # Procesare mesaj
+                    await self._process_message(message)
                     
-                    # Process the received data
-                    if data:
-                        # Forward data to upper layer
-                        self.notify_upper(data)
+                except asyncio.TimeoutError:
+                    logger.warning(f"[{self.connection_id}] Timeout la așteptarea mesajului. Se verifică conexiunea...")
+                    
+                    # Verifică dacă websocket-ul este încă deschis
+                    if self._websocket and self._websocket.open:
+                        continue
+                    else:
+                        logger.error(f"[{self.connection_id}] Conexiune pierdută")
+                        self.is_connected = False
+                        break
                         
-                except TimeoutError:
-                    # Timeout is fine, just continue
-                    pass
+                except ConnectionClosed as e:
+                    logger.error(f"[{self.connection_id}] Conexiune închisă de server: {str(e)}")
+                    self.is_connected = False
+                    break
                     
+                except Exception as e:
+                    logger.error(f"[{self.connection_id}] Eroare la procesarea mesajelor: {str(e)}")
+            
+            logger.info(f"[{self.connection_id}] Handler mesaje oprit")
+            
         except asyncio.CancelledError:
-            logger.debug("Read task cancelled")
+            # Task anulat, se iese din buclă
+            logger.debug(f"[{self.connection_id}] Handler mesaje oprit prin anulare")
         except Exception as e:
-            logger.error(f"Error in read loop: {str(e)}")
+            logger.error(f"[{self.connection_id}] Eroare în handler-ul de mesaje: {str(e)}")
             await self._handle_connection_failure(e)
-            
-    async def _handle_connection_failure(self, exception: Exception) -> None:
-        """
-        Handle connection failures, including reconnection logic.
-        
-        Args:
-            exception: The exception that caused the failure
-        """
-        self.connected = False
-        
-        # Clean up resources
-        if self.websocket:
-            try:
-                await self.websocket.close()
-            except:
-                pass
-            self.websocket = None
-            
-        if self.writer:
-            try:
-                self.writer.close()
-                await self.writer.wait_closed()
-            except:
-                pass
-            self.writer = None
-            self.reader = None
-            
-        # Attempt to reconnect if configured
-        if self._reconnect_attempts < self._max_reconnect_attempts:
-            self._reconnect_attempts += 1
-            delay = self._reconnect_delay * self._reconnect_attempts
-            
-            logger.info(f"Connection lost. Reconnecting in {delay} seconds (attempt {self._reconnect_attempts}/{self._max_reconnect_attempts})")
-            
-            # Notify upper layers about the disconnection
-            self.notify_upper({'event': 'disconnected', 'error': str(exception)})
-            
-            await asyncio.sleep(delay)
-            
-            # Attempt to reconnect
-            try:
-                reconnected = await self.connect()
-                if reconnected:
-                    # Notify upper layers about the reconnection
-                    self.notify_upper({'event': 'reconnected'})
-            except Exception as e:
-                logger.error(f"Reconnection failed: {str(e)}")
-        else:
-            logger.error(f"Maximum reconnection attempts reached. Giving up.")
-            # Notify upper layers about permanent disconnection
-            self.notify_upper({
-                'event': 'connection_failed',
-                'error': str(exception),
-                'permanent': True
-            })
-            
-    def set_header(self, name: str, value: str) -> None:
-        """
-        Set a custom header for WebSocket connections.
-        
-        Args:
-            name: Header name
-            value: Header value
-        """
-        self._custom_headers[name] = value
-        
-    def set_connect_timeout(self, timeout: float) -> None:
-        """
-        Set the connection timeout.
-        
-        Args:
-            timeout: Timeout in seconds
-        """
-        self.connect_timeout = timeout
-        
-    def set_read_timeout(self, timeout: float) -> None:
-        """
-        Set the read timeout.
-        
-        Args:
-            timeout: Timeout in seconds
-        """
-        self.read_timeout = timeout
-        
-    def set_ping_interval(self, interval: float) -> None:
-        """
-        Set the ping interval.
-        
-        Args:
-            interval: Interval in seconds
-        """
-        self.ping_interval = interval
-        
-    def set_reconnect_params(self, max_attempts: int, delay: float) -> None:
-        """
-        Set reconnection parameters.
-        
-        Args:
-            max_attempts: Maximum number of reconnection attempts
-            delay: Base delay between attempts (will be multiplied by attempt number)
-        """
-        self._max_reconnect_attempts = max_attempts
-        self._reconnect_delay = delay
-        
-    def is_connected(self) -> bool:
-        """
-        Check if the connection is active.
-        
-        Returns:
-            bool: True if connected
-        """
-        return self.connected
-        
-    async def reset(self) -> None:
-        """
-        Reset the connection.
-        """
-        await self.disconnect()
-        self._reconnect_attempts = 0
-        
-        
-class WhatsAppConnection(Connection):
-    """
-    Implementare specializată a conexiunii pentru WhatsApp.
     
-    Această clasă extinde Connection de bază cu funcționalități specifice
-    WhatsApp, cum ar fi gestionarea mesajelor și serializarea/deserializarea
-    protocolului WhatsApp.
-    """
-    
-    def __init__(self):
-        """Inițializează conexiunea WhatsApp."""
-        super().__init__(use_websocket=True)
-        self._callbacks = {}
-        self._message_counter = 0
-        self._pending_messages = {}
-        
-    async def send_message(self, message: Dict[str, Any]) -> str:
+    async def send_message(self, message: Union[Dict[str, Any], bytes, str]) -> bool:
         """
         Trimite un mesaj către serverul WhatsApp.
         
         Args:
-            message: Mesajul de trimis
+            message: Mesajul de trimis (dict, bytes sau string)
             
         Returns:
-            tag: Identificatorul mesajului
+            bool: True dacă mesajul a fost trimis cu succes
             
         Raises:
-            ConnectionError: Dacă trimiterea eșuează
+            ConnectionError: Dacă nu există o conexiune activă
         """
-        if not isinstance(message, dict):
-            raise ValueError("Mesajul trebuie să fie un dicționar")
-            
-        # Generează un tag unic pentru mesaj dacă nu există deja
-        tag = message.get("tag", f"message_{int(time.time())}_{self._message_counter}")
-        self._message_counter += 1
+        if not self.is_connected or not self._websocket:
+            raise ConnectionError("Not connected to WhatsApp server")
         
-        # Adaugă tagul la mesaj dacă nu există
-        if "tag" not in message:
-            message["tag"] = tag
-            
-        # Înregistrează mesajul ca fiind în așteptare
-        self._pending_messages[tag] = message
-        
-        # Trimite mesajul
-        success = await self.send(message)
-        
-        if not success:
-            del self._pending_messages[tag]
-            raise ConnectionError("Nu s-a putut trimite mesajul")
-            
-        return tag
-        
-    def register_callback(self, message_type: str, callback: Callable) -> None:
-        """
-        Înregistrează un callback pentru un anumit tip de mesaj.
-        
-        Args:
-            message_type: Tipul de mesaj ('message', 'receipt', 'presence', etc.)
-            callback: Funcția de callback
-        """
-        if message_type not in self._callbacks:
-            self._callbacks[message_type] = []
-            
-        self._callbacks[message_type].append(callback)
-        
-    def notify_upper(self, data: Union[bytes, Dict[str, Any]]) -> None:
-        """
-        Procesează datele primite și notifică layer-ul superior.
-        
-        Override pentru metoda din clasa de bază pentru a procesa
-        mesajele WhatsApp și a apela callback-urile potrivite.
-        
-        Args:
-            data: Datele primite
-        """
-        # Încearcă să deserializeze datele
         try:
-            if isinstance(data, bytes):
-                # Încearcă să decodifice în JSON
-                try:
-                    data_str = data.decode('utf-8')
-                    message = json.loads(data_str)
-                except (UnicodeDecodeError, json.JSONDecodeError):
-                    # Dacă nu este JSON, trimite datele ca atare
-                    super().notify_upper(data)
-                    return
+            # Determină tipul de mesaj și codifică corespunzător
+            if isinstance(message, dict):
+                # Mesaj JSON
+                encoded = self.protocol.create_json_message_binary(message)
+                message_type = "JSON"
+            elif isinstance(message, bytes):
+                # Mesaj binar deja codificat
+                encoded = message
+                message_type = "binary"
+            elif isinstance(message, str):
+                # Mesaj text
+                encoded = message.encode('utf-8')
+                message_type = "text"
             else:
-                message = data
-                
-            # Verifică dacă avem un tip de mesaj
-            message_type = message.get("type", "unknown")
+                raise ValueError(f"Unsupported message type: {type(message)}")
             
-            # Apelează callback-urile înregistrate pentru acest tip
-            if message_type in self._callbacks:
-                for callback in self._callbacks[message_type]:
-                    asyncio.create_task(callback(message))
-                    
-            # Notifică și layer-ul superior (pentru compatibilitate cu yowsup)
-            super().notify_upper(message)
+            # Trimite mesajul
+            await self._websocket.send(encoded)
+            
+            # Actualizare timestamp activitate
+            self.last_activity = time.time()
+            
+            logger.debug(f"[{self.connection_id}] Mesaj {message_type} trimis")
+            
+            # Adaugă mesajul la log dacă este în format JSON
+            if isinstance(message, dict):
+                log_message = json.dumps(message)[:200]
+                if len(log_message) >= 200:
+                    log_message += "..."
+                logger.debug(f"[{self.connection_id}] Conținut mesaj: {log_message}")
+            
+            return True
             
         except Exception as e:
-            logger.error(f"Eroare la procesarea mesajului primit: {e}")
-            # Trimite datele originale mai departe
-            super().notify_upper(data)
+            logger.error(f"[{self.connection_id}] Eroare la trimiterea mesajului: {str(e)}")
+            
+            # Verifică dacă conexiunea este încă deschisă
+            if isinstance(e, ConnectionClosed):
+                self.is_connected = False
+                self.connection_state = CONN_STATE_ERROR
+            
+            raise ConnectionError(f"Failed to send message: {str(e)}")
+    
+    async def send_handshake(self) -> bool:
+        """
+        Trimite mesajul de handshake pentru inițierea conexiunii.
+        
+        Returns:
+            bool: True dacă handshake-ul a fost trimis cu succes
+        """
+        try:
+            # Creează și trimite mesajul de handshake
+            handshake_binary = self.protocol.create_handshake_binary()
+            
+            logger.info(f"[{self.connection_id}] Trimitere handshake...")
+            await self.send_message(handshake_binary)
+            
+            # Așteaptă un scurt timp pentru a primi răspunsul
+            await asyncio.sleep(1)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"[{self.connection_id}] Eroare la trimiterea handshake: {str(e)}")
+            return False
+    
+    async def _process_message(self, message: Union[bytes, str]) -> None:
+        """
+        Procesează un mesaj primit de la server.
+        
+        Args:
+            message: Mesajul primit (bytes sau string)
+        """
+        try:
+            # Determină tipul de mesaj
+            is_binary = isinstance(message, bytes)
+            
+            if is_binary:
+                # Procesează mesaj binar
+                try:
+                    # Decodifică mesajul binar
+                    message_type, decoded_data = self.protocol.process_message(message)
+                    
+                    # Verifică dacă este un challenge de autentificare
+                    if message_type == BINARY_TYPE_CHALLENGE:
+                        logger.info(f"[{self.connection_id}] Challenge de autentificare primit")
+                        
+                        if self._challenge_callback:
+                            await self._challenge_callback(decoded_data)
+                        else:
+                            logger.warning(f"[{self.connection_id}] Challenge primit dar nu există callback")
+                    
+                    # Handle based on message type (convert to string for type safety)
+                    message_type_str = str(message_type) if message_type is not None else "unknown"
+                    await self._handle_message_by_type(message_type_str, decoded_data)
+                    
+                except Exception as e:
+                    logger.error(f"[{self.connection_id}] Eroare la decodarea mesajului binar: {str(e)}")
+                    
+                    # Try fallback text interpretation
+                    if message.startswith(b'"'):
+                        # Looks like a JSON string
+                        try:
+                            text_message = message.decode('utf-8')
+                            decoded = json.loads(text_message)
+                            logger.info(f"[{self.connection_id}] Decodare alternativă reușită: {text_message[:100]}")
+                            
+                            # Determine and handle message type
+                            message_type = self._determine_message_type(decoded)
+                            await self._handle_message_by_type(message_type, decoded)
+                            
+                        except Exception:
+                            logger.error(f"[{self.connection_id}] Decodare alternativă eșuată")
+            else:
+                # Handle text message (likely JSON)
+                try:
+                    decoded = json.loads(message)
+                    
+                    # Determine and handle message type
+                    message_type = self._determine_message_type(decoded)
+                    await self._handle_message_by_type(message_type, decoded)
+                    
+                except json.JSONDecodeError:
+                    logger.warning(f"[{self.connection_id}] Mesaj text non-JSON primit: {message[:100]}")
+        
+        except Exception as e:
+            logger.error(f"[{self.connection_id}] Eroare la procesarea mesajului: {str(e)}")
+    
+    def _determine_message_type(self, data: Any) -> str:
+        """
+        Determine the type of a received message.
+        
+        Args:
+            data: Message data
+            
+        Returns:
+            str: Message type
+        """
+        if isinstance(data, dict):
+            # Check for explicit type field
+            if "type" in data:
+                return data["type"]
+            
+            # Check for common message patterns
+            if "message" in data:
+                return "chat_message"
+            elif "presence" in data:
+                return "presence"
+            elif "receipt" in data:
+                return "receipt"
+            elif "status" in data:
+                return "status"
+        
+        return "unknown"
+    
+    async def _handle_message_by_type(self, message_type: str, data: Any) -> None:
+        """
+        Handle a message based on its type.
+        
+        Args:
+            message_type: Type of message
+            data: Message data
+        """
+        # Call registered callback for this message type if available
+        callback = self._message_callbacks.get(message_type)
+        if callback:
+            try:
+                await callback(data)
+            except Exception as e:
+                logger.error(f"[{self.connection_id}] Eroare în callback pentru mesaj {message_type}: {str(e)}")
+        else:
+            logger.debug(f"[{self.connection_id}] Niciun callback pentru mesaj de tip {message_type}")
+            
+        # Handle some message types specially
+        if message_type == "Conn":
+            # Connection status update
+            if isinstance(data, dict) and data.get("status") == 200:
+                logger.info(f"[{self.connection_id}] Conexiune confirmată de server")
+                
+                # Save server token if provided
+                if "serverToken" in data:
+                    self.server_token = data["serverToken"]
+                    self.protocol.server_token = self.server_token
+    
+    async def _handle_challenge(self, challenge_data: Any) -> None:
+        """
+        Handle an authentication challenge from the server.
+        
+        Args:
+            challenge_data: Challenge data
+        """
+        logger.info(f"[{self.connection_id}] Challenge de autentificare primit")
+        
+        # Call challenge callback if registered
+        if self._challenge_callback:
+            await self._challenge_callback(challenge_data)
+    
+    async def _handle_connection_failure(self, exception: Exception) -> None:
+        """
+        Handle a connection failure.
+        
+        Args:
+            exception: Exception that caused the failure
+        """
+        # Log the error
+        logger.error(f"[{self.connection_id}] Eroare de conexiune: {str(exception)}")
+        
+        # Set connection state
+        self.connection_state = CONN_STATE_ERROR
+        self.is_connected = False
+        
+        # Clean up resources
+        if self._websocket:
+            try:
+                await self._websocket.close()
+            except:
+                pass
+            finally:
+                self._websocket = None
+    
+    def register_callback(self, message_type: str, callback: Callable) -> None:
+        """
+        Register a callback for a specific message type.
+        
+        Args:
+            message_type: Type of message to register callback for
+            callback: Callback function to call when message is received
+        """
+        self._message_callbacks[message_type] = callback
+    
+    def register_challenge_callback(self, callback: Callable) -> None:
+        """
+        Register a callback for processing authentication challenges.
+        
+        Args:
+            callback: Callback function to process challenge
+        """
+        self._challenge_callback = callback

@@ -1,11 +1,10 @@
 """
-Protocol layer for WhatsApp communication.
+Pachetul de protocol.
 
-This module handles the WhatsApp protocol details, including serialization
-and deserialization of messages.
+Acest pachet conține clasele care implementează protocolul 
+specific WhatsApp, formatele de mesaje și codificările.
 """
 
-from bocksup.layers.protocol.messages import MessageTypes
-from bocksup.layers.protocol.serialization import Serializer
+from .websocket_protocol import WebSocketProtocol
 
-__all__ = ['MessageTypes', 'Serializer']
+__all__ = ['WebSocketProtocol']

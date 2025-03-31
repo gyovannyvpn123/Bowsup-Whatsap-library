@@ -1,68 +1,40 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obține Cod de Asociere - Bocksup</title>
-    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <title>Cod Asociere - Bocksup</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <style>
         .jumbotron {
             padding: 2rem 1rem;
-            margin-bottom: 2rem;
-            background-color: var(--bs-dark);
+            background-color: var(--bs-secondary-bg);
             border-radius: 0.3rem;
+            margin-bottom: 2rem;
         }
-        #pairingCode {
+        .pairing-code {
             font-size: 2.5rem;
-            letter-spacing: 5px;
-            font-weight: bold;
-            color: var(--bs-success);
-        }
-        .code-container {
-            display: none;
-            background-color: var(--bs-dark);
-            padding: 2rem;
-            border-radius: 0.5rem;
-            margin-top: 2rem;
+            font-family: monospace;
+            letter-spacing: 0.5rem;
             text-align: center;
+            margin: 2rem 0;
         }
-        #logContainer {
-            height: 300px;
-            overflow-y: auto;
-            background-color: #212529;
-            color: #adb5bd;
-            font-family: monospace;
-            padding: 1rem;
-            border-radius: 0.25rem;
-            margin-top: 1rem;
+        .phone-container {
+            text-align: center;
+            margin: 2rem 0;
         }
-        .log-entry {
-            margin-bottom: 0.25rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .log-error {
-            color: #dc3545;
-        }
-        .log-success {
-            color: #28a745;
-        }
-        .log-warning {
-            color: #ffc107;
-        }
-        .log-info {
-            color: #17a2b8;
-        }
-        .phone-input {
-            letter-spacing: 1px;
-            font-family: monospace;
+        .phone-container img {
+            max-width: 100%;
+            max-height: 400px;
         }
     </style>
 </head>
-<body>
+<body data-bs-theme="dark">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">Bocksup</a>
+            <a class="navbar-brand" href="/">
+                <strong>Bocksup</strong>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -78,329 +50,194 @@
                         <a class="nav-link" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/pairing">Cod de asociere</a>
+                        <a class="nav-link" href="/examples">Exemple</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/test">Testare</a>
+                        <a class="nav-link" href="/test">Test</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/pairing">Asociere</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/debug">Debug</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="jumbotron text-center">
-        <div class="container">
-            <h1 class="display-4">Obținere Cod de Asociere</h1>
-            <p class="lead">Folosește un cod de asociere pentru a conecta aplicația la contul WhatsApp</p>
+    <div class="container mt-4">
+        <div class="jumbotron">
+            <h1 class="display-4">Cod de Asociere</h1>
+            <p class="lead">Obțineți un cod de asociere pentru autentificare WhatsApp</p>
+            <hr class="my-4">
+            <p>Codul de asociere vă permite să autentificați aplicația cu contul WhatsApp fără a scana un cod QR.</p>
         </div>
-    </div>
 
-    <div class="container my-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
                     <div class="card-header">
-                        <h4 class="mb-0">Solicitare cod de asociere WhatsApp</h4>
+                        Obțineți un cod de asociere
                     </div>
                     <div class="card-body">
-                        <div id="pairingForm">
-                            <div class="alert alert-info" role="alert">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Introduceți numărul de telefon pentru care doriți să obțineți un cod de asociere WhatsApp.
-                                <br>
-                                <small>Formatul: număr complet fără + sau spații (ex: 40748427351 pentru +40 748 427 351)</small>
-                            </div>
-                            
+                        <form id="pairingForm">
                             <div class="mb-3">
-                                <label for="phoneNumber" class="form-label">Număr de telefon</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">+</span>
-                                    <input type="text" class="form-control phone-input" id="phoneNumber" placeholder="Exemplu: 40748427351" maxlength="15">
-                                </div>
-                                <div class="invalid-feedback" id="phoneError"></div>
+                                <label for="phone_number" class="form-label">Număr de telefon</label>
+                                <input type="text" class="form-control" id="phone_number" placeholder="Exemplu: 40748427351" required>
+                                <div class="form-text">Introduceți numărul de telefon în format internațional, fără spații sau simboluri.</div>
                             </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Metoda de livrare</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="deliveryMethod" id="smsMethod" value="sms" checked>
-                                    <label class="form-check-label" for="smsMethod">
-                                        SMS
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="deliveryMethod" id="voiceMethod" value="voice">
-                                    <label class="form-check-label" for="voiceMethod">
-                                        Apel vocal
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid">
-                                <button class="btn btn-primary" id="requestButton">
-                                    Solicită cod de asociere
-                                </button>
+                            <button type="submit" id="pairingButton" class="btn btn-primary">
+                                Obține cod
+                                <span id="pairingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                        </form>
+
+                        <div id="pairingResults" class="mt-4 d-none">
+                            <div class="alert alert-success">
+                                <h4 class="alert-heading">Cod de asociere obținut!</h4>
+                                <p>Introduceți acest cod în aplicația WhatsApp de pe telefonul dumneavoastră pentru a finaliza asocierea:</p>
+                                <div class="pairing-code" id="pairingCode">------</div>
+                                <hr>
+                                <p class="mb-0">Codul expiră în 60 de secunde. Deschideți WhatsApp și mergeți la Setări → Dispozitive asociate → Asociază un dispozitiv.</p>
                             </div>
                         </div>
-                        
-                        <div id="loadingContainer" style="display: none;" class="text-center py-4">
-                            <div class="spinner-border text-primary mb-3" role="status">
+
+                        <div id="pairingError" class="mt-4 d-none">
+                            <div class="alert alert-danger">
+                                <h4 class="alert-heading">Eroare</h4>
+                                <p id="errorMessage">A apărut o eroare la obținerea codului de asociere.</p>
+                                <hr>
+                                <p class="mb-0">Verificați numărul de telefon și încercați din nou. Asigurați-vă că numărul este activ și are WhatsApp instalat.</p>
+                            </div>
+                        </div>
+
+                        <div id="pairingInProgress" class="text-center mt-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Se încarcă...</span>
                             </div>
-                            <h5 id="statusMessage">Se procesează cererea...</h5>
-                        </div>
-                        
-                        <div id="codeContainer" class="code-container">
-                            <h3 class="mb-4">Codul de asociere:</h3>
-                            <div id="pairingCode">------</div>
-                            <p class="mt-3">Introduceți acest cod în aplicația WhatsApp de pe telefonul dvs. pentru a finaliza asocierea.</p>
-                            <div class="alert alert-warning mt-3" role="alert">
-                                <strong>Important:</strong> Codul este valabil pentru o perioadă limitată de timp. Utilizați-l imediat!
-                            </div>
-                        </div>
-                        
-                        <div id="errorContainer" class="alert alert-danger mt-3" style="display: none;">
-                            <h5 class="alert-heading">Eroare!</h5>
-                            <p id="errorMessage"></p>
+                            <p class="mt-2">Se obține codul de asociere, vă rugăm așteptați...</p>
+                            <p><small>Acest proces poate dura până la 30 de secunde.</small></p>
                         </div>
                     </div>
                 </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Jurnal de activitate</h5>
-                        <button class="btn btn-sm btn-outline-secondary" id="toggleLogButton">Arată</button>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Cum să folosiți codul de asociere
                     </div>
-                    <div class="card-body" id="logSection" style="display: none;">
-                        <div id="logContainer"></div>
+                    <div class="card-body">
+                        <ol>
+                            <li class="mb-2">Deschideți WhatsApp pe telefonul dumneavoastră.</li>
+                            <li class="mb-2">Mergeți la Setări → Dispozitive asociate → Asociază un dispozitiv.</li>
+                            <li class="mb-2">Apăsați pe "Nu puteți scana?" sau opțiunea similară.</li>
+                            <li class="mb-2">Introduceți codul de 8 cifre afișat de această pagină.</li>
+                            <li class="mb-2">Așteptați finalizarea procesului de asociere.</li>
+                        </ol>
+
+                        <div class="phone-container">
+                            <img src="https://static.whatsapp.net/rsrc.php/v3/yO/r/FsWUqRoOsPu.png" alt="Exemplu ecran WhatsApp pentru cod de asociere" class="img-fluid">
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <strong>Notă:</strong> Codul de asociere este valabil doar 60 de secunde. Dacă expiră, va trebui să solicitați unul nou.
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="bg-dark text-light py-4 mt-5">
+    <footer class="mt-5 py-3 bg-dark text-center">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Bocksup</h5>
-                    <p>O bibliotecă modernă pentru integrarea cu WhatsApp</p>
-                    <p>Versiune: 0.2.0 | Licență: MIT</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>© 2025 Bocksup | Toate drepturile rezervate</p>
-                    <p>
-                        <a href="https://github.com/gyovannyvpn123/Bowsup-Whatsap-library" class="text-light me-3">GitHub</a>
-                        <a href="/docs" class="text-light me-3">Documentație</a>
-                        <a href="/about" class="text-light">Despre</a>
-                    </p>
-                </div>
-            </div>
+            <p class="text-muted mb-0">Bocksup © 2025 - O bibliotecă Python pentru integrare WhatsApp</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elements
-            const phoneNumberInput = document.getElementById('phoneNumber');
-            const requestButton = document.getElementById('requestButton');
             const pairingForm = document.getElementById('pairingForm');
-            const loadingContainer = document.getElementById('loadingContainer');
-            const codeContainer = document.getElementById('codeContainer');
-            const pairingCodeDisplay = document.getElementById('pairingCode');
-            const errorContainer = document.getElementById('errorContainer');
-            const errorMessageDisplay = document.getElementById('errorMessage');
-            const statusMessageDisplay = document.getElementById('statusMessage');
-            const logContainer = document.getElementById('logContainer');
-            const logSection = document.getElementById('logSection');
-            const toggleLogButton = document.getElementById('toggleLogButton');
-            const phoneError = document.getElementById('phoneError');
+            const pairingButton = document.getElementById('pairingButton');
+            const pairingSpinner = document.getElementById('pairingSpinner');
+            const pairingResults = document.getElementById('pairingResults');
+            const pairingError = document.getElementById('pairingError');
+            const pairingInProgress = document.getElementById('pairingInProgress');
+            const pairingCode = document.getElementById('pairingCode');
+            const errorMessage = document.getElementById('errorMessage');
             
-            // Variables
-            let requestId = null;
-            let statusCheckInterval = null;
-            
-            // Toggle log visibility
-            toggleLogButton.addEventListener('click', function() {
-                if (logSection.style.display === 'none') {
-                    logSection.style.display = 'block';
-                    toggleLogButton.textContent = 'Ascunde';
-                } else {
-                    logSection.style.display = 'none';
-                    toggleLogButton.textContent = 'Arată';
-                }
-            });
-            
-            // Validate phone number
-            phoneNumberInput.addEventListener('input', function() {
-                // Allow only digits
-                this.value = this.value.replace(/[^0-9]/g, '');
+            // Form submission
+            pairingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
                 
-                // Basic validation
-                if (this.value.length < 10) {
-                    phoneNumberInput.classList.add('is-invalid');
-                    phoneError.textContent = 'Numărul de telefon trebuie să aibă minim 10 cifre';
-                    requestButton.disabled = true;
-                } else {
-                    phoneNumberInput.classList.remove('is-invalid');
-                    phoneError.textContent = '';
-                    requestButton.disabled = false;
-                }
-            });
-            
-            // Request pairing code
-            requestButton.addEventListener('click', function() {
-                const phoneNumber = phoneNumberInput.value.trim();
-                const deliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
+                // Get phone number
+                const phoneNumber = document.getElementById('phone_number').value.trim();
                 
-                // Validate phone number
-                if (!phoneNumber || phoneNumber.length < 10) {
-                    phoneNumberInput.classList.add('is-invalid');
-                    phoneError.textContent = 'Introduceți un număr de telefon valid';
+                if (!phoneNumber) {
+                    showError('Vă rugăm să introduceți un număr de telefon');
                     return;
                 }
                 
+                // Hide previous results
+                pairingResults.classList.add('d-none');
+                pairingError.classList.add('d-none');
+                
                 // Show loading state
-                pairingForm.style.display = 'none';
-                loadingContainer.style.display = 'block';
-                errorContainer.style.display = 'none';
-                codeContainer.style.display = 'none';
-                statusMessageDisplay.textContent = 'Se inițiază conexiunea...';
+                pairingButton.disabled = true;
+                pairingSpinner.classList.remove('d-none');
+                pairingInProgress.classList.remove('d-none');
                 
-                // Clear previous logs
-                logContainer.innerHTML = '';
-                
-                // Request pairing code
-                fetch('/api/request-pairing-code', {
+                // Send API request
+                fetch('/api/get-pairing-code', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        phone_number: phoneNumber,
-                        method: deliveryMethod
-                    })
+                        phone_number: phoneNumber
+                    }),
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        requestId = data.request_id;
+                    // Hide loading state
+                    pairingButton.disabled = false;
+                    pairingSpinner.classList.add('d-none');
+                    pairingInProgress.classList.add('d-none');
+                    
+                    if (data.success && data.pairing_code) {
+                        // Show pairing code
+                        pairingCode.textContent = data.pairing_code;
+                        pairingResults.classList.remove('d-none');
                         
-                        // Start checking status
-                        statusCheckInterval = setInterval(checkStatus, 1000);
-                        
-                        // Show log section
-                        logSection.style.display = 'block';
-                        toggleLogButton.textContent = 'Ascunde';
-                        
-                        // Add initial log entry
-                        addLogEntry('Cerere înregistrată, ID: ' + requestId);
-                        addLogEntry('Se inițiază conexiunea la serverele WhatsApp...');
+                        // Auto-hide after 60 seconds
+                        setTimeout(() => {
+                            if (!pairingResults.classList.contains('d-none')) {
+                                pairingResults.classList.add('d-none');
+                                showError('Codul de asociere a expirat. Vă rugăm să solicitați unul nou.');
+                            }
+                        }, 60000);
                     } else {
-                        showError(data.error || 'Eroare la înregistrarea cererii');
+                        // Show error
+                        showError(data.error || 'Eroare nespecificată la obținerea codului de asociere');
                     }
                 })
                 .catch(error => {
-                    showError('Eroare la comunicarea cu serverul: ' + error.message);
+                    // Hide loading state
+                    pairingButton.disabled = false;
+                    pairingSpinner.classList.add('d-none');
+                    pairingInProgress.classList.add('d-none');
+                    
+                    // Show error
+                    showError('Eroare la procesarea cererii: ' + error.message);
                 });
             });
             
-            // Check request status
-            function checkStatus() {
-                if (!requestId) return;
-                
-                fetch('/api/check-pairing-status/' + requestId)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const result = data.result;
-                            
-                            // Update status message
-                            statusMessageDisplay.textContent = result.message;
-                            
-                            // Update logs
-                            updateLogs(result.logs);
-                            
-                            // Handle status
-                            if (result.status === 'pairing_code_received' || result.status === 'completed') {
-                                if (result.pairing_code) {
-                                    showPairingCode(result.pairing_code);
-                                    clearInterval(statusCheckInterval);
-                                }
-                            } else if (result.status === 'error') {
-                                showError(result.message);
-                                clearInterval(statusCheckInterval);
-                            } else if (result.status === 'completed' && !result.pairing_code) {
-                                showError('Procesul a fost finalizat, dar nu s-a putut obține un cod de asociere. Verificați jurnalul pentru detalii.');
-                                clearInterval(statusCheckInterval);
-                            }
-                        } else {
-                            showError(data.error || 'Eroare la verificarea statusului cererii');
-                            clearInterval(statusCheckInterval);
-                        }
-                    })
-                    .catch(error => {
-                        showError('Eroare la comunicarea cu serverul: ' + error.message);
-                        clearInterval(statusCheckInterval);
-                    });
-            }
-            
-            // Show pairing code
-            function showPairingCode(code) {
-                pairingCodeDisplay.textContent = code;
-                loadingContainer.style.display = 'none';
-                codeContainer.style.display = 'block';
-                
-                // Add success log
-                addLogEntry('Cod de asociere primit: ' + code, 'success');
-            }
-            
-            // Show error
             function showError(message) {
-                loadingContainer.style.display = 'none';
-                errorContainer.style.display = 'block';
-                errorMessageDisplay.textContent = message;
-                pairingForm.style.display = 'block';
-                
-                // Add error log
-                addLogEntry('Eroare: ' + message, 'error');
-            }
-            
-            // Add log entry
-            function addLogEntry(message, type = 'info') {
-                const entry = document.createElement('div');
-                entry.className = 'log-entry log-' + type;
-                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-                logContainer.appendChild(entry);
-                
-                // Scroll to bottom
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-            
-            // Update logs from server
-            function updateLogs(logs) {
-                if (!logs || !logs.length) return;
-                
-                // Clear logs if first update
-                if (logContainer.children.length <= 2) {
-                    logContainer.innerHTML = '';
-                }
-                
-                // Remove existing logs that match our new ones to avoid duplicates
-                const existingMessages = Array.from(logContainer.children).map(el => el.textContent.split('] ')[1]);
-                
-                // Add new logs
-                logs.forEach(log => {
-                    if (!existingMessages.includes(log)) {
-                        let type = 'info';
-                        if (log.toLowerCase().includes('eroare')) type = 'error';
-                        if (log.toLowerCase().includes('succes') || log.toLowerCase().includes('reușit')) type = 'success';
-                        if (log.toLowerCase().includes('avertisment') || log.toLowerCase().includes('verificați')) type = 'warning';
-                        
-                        addLogEntry(log, type);
-                    }
-                });
+                errorMessage.textContent = message;
+                pairingError.classList.remove('d-none');
+                pairingResults.classList.add('d-none');
             }
         });
     </script>

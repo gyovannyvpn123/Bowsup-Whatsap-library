@@ -1,10 +1,9 @@
 """
-Layer modules for the Bocksup protocol stack.
+Pachetul de straturi.
 
-The layers module provides a layered architecture for the WhatsApp protocol stack,
-separating concerns like networking, encryption, and protocol handling.
+Acest pachet conține diferitele straturi care formează
+arhitectura stratificată a bibliotecii Bocksup, similar
+cu arhitectura originală yowsup.
 """
 
-from bocksup.layers.interface.layer import Layer
-
-__all__ = ['Layer']
+__all__ = []

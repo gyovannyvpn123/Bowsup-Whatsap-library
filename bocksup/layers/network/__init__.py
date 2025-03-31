@@ -1,9 +1,10 @@
 """
-Network layer for WhatsApp protocol.
+Pachetul de rețea.
 
-This module handles the low-level network communication with WhatsApp servers.
+Acest pachet conține clasele care gestionează conexiunile la nivel 
+de rețea pentru comunicarea cu serverele WhatsApp.
 """
 
-from bocksup.layers.network.connection import Connection
+from .connection import WhatsAppConnection
 
-__all__ = ['Connection']
+__all__ = ['WhatsAppConnection']
