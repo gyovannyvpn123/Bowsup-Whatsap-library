@@ -36,9 +36,9 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/yourusername/bocksup"
-"Bug Tracker" = "https://github.com/yourusername/bocksup/issues"
-"Documentation" = "https://github.com/yourusername/bocksup/wiki"
+"Homepage" = "https://github.com/gyovannyvpn123/Bowsup-Whatsap-library"
+"Bug Tracker" = "https://github.com/gyovannyvpn123/Bowsup-Whatsap-library/issues"
+"Documentation" = "https://github.com/gyovannyvpn123/Bowsup-Whatsap-library/wiki"
 
 [tool.hatch.build.targets.wheel]
 packages = ["bocksup"]
