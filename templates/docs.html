@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html lang="ro" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - Bocksup WhatsApp Library</title>
+    <title>Documentație - Bocksup</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Bocksup</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,236 +16,366 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
+                        <a class="nav-link" href="/">Acasă</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/about">About</a>
+                        <a class="nav-link" href="/about">Despre</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/docs">Documentation</a>
+                        <a class="nav-link active" aria-current="page" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/examples">Examples</a>
+                        <a class="nav-link" href="/examples">Exemple</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/debug">Debug</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5">
+    <div class="container mt-4">
         <div class="row">
-            <div class="col-lg-10 mx-auto">
-                <h1 class="display-4 text-center mb-4">Documentation</h1>
-                
-                <div class="row">
-                    <!-- Documentation Navigation -->
-                    <div class="col-md-3">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Navigation</h5>
+            <div class="col-md-3">
+                <div class="list-group mb-4" id="list-tab" role="tablist">
+                    <a class="list-group-item list-group-item-action active bg-dark text-light" id="list-instalare-list" data-bs-toggle="list" href="#list-instalare" role="tab" aria-controls="list-instalare">Instalare</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-arhitectura-list" data-bs-toggle="list" href="#list-arhitectura" role="tab" aria-controls="list-arhitectura">Arhitectură</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-autentificare-list" data-bs-toggle="list" href="#list-autentificare" role="tab" aria-controls="list-autentificare">Autentificare</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-mesagerie-list" data-bs-toggle="list" href="#list-mesagerie" role="tab" aria-controls="list-mesagerie">Mesagerie</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-criptare-list" data-bs-toggle="list" href="#list-criptare" role="tab" aria-controls="list-criptare">Criptare</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-grupuri-list" data-bs-toggle="list" href="#list-grupuri" role="tab" aria-controls="list-grupuri">Grupuri</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-media-list" data-bs-toggle="list" href="#list-media" role="tab" aria-controls="list-media">Media</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-erori-list" data-bs-toggle="list" href="#list-erori" role="tab" aria-controls="list-erori">Gestionare Erori</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-api-list" data-bs-toggle="list" href="#list-api" role="tab" aria-controls="list-api">Referință API</a>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="list-instalare" role="tabpanel" aria-labelledby="list-instalare-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Instalare și Configurare</h2>
+                                <p>Pentru a instala biblioteca Bocksup, utilizați următoarea comandă pip:</p>
+                                <pre class="p-3 bg-dark"><code>pip install bocksup</code></pre>
+                                
+                                <h4 class="mt-4">Cerințe de Sistem</h4>
+                                <ul>
+                                    <li>Python 3.11 sau mai nou</li>
+                                    <li>pip (pentru instalare)</li>
+                                    <li>Biblioteci dependente:</li>
+                                </ul>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-dark">
+                                        <thead>
+                                            <tr>
+                                                <th>Dependență</th>
+                                                <th>Versiune</th>
+                                                <th>Descriere</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>aiohttp</td>
+                                                <td>≥ 3.8.0</td>
+                                                <td>Pentru comunicare HTTP asincronă</td>
+                                            </tr>
+                                            <tr>
+                                                <td>websockets</td>
+                                                <td>≥ 10.0</td>
+                                                <td>Pentru comunicare WebSocket</td>
+                                            </tr>
+                                            <tr>
+                                                <td>pycryptodome</td>
+                                                <td>≥ 3.15.0</td>
+                                                <td>Pentru criptare și semnare</td>
+                                            </tr>
+                                            <tr>
+                                                <td>construct</td>
+                                                <td>≥ 2.10.0</td>
+                                                <td>Pentru parsarea și serializarea mesajelor</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <h4 class="mt-4">Configurare Inițială</h4>
+                                <p>După instalare, este necesară configurarea bibliotecii prin setarea unor parametri de bază:</p>
+                                <pre class="p-3 bg-dark"><code>import bocksup
+
+# Configurarea bibliotecii
+bocksup.Settings.set_debug(True)  # Activează logging detaliat
+bocksup.Settings.set_connection_timeout(30)  # Timeout pentru conexiuni în secunde
+bocksup.Settings.set_retry_count(3)  # Numărul de reîncercări pentru operații eșuate</code></pre>
                             </div>
-                            <div class="card-body p-0">
-                                <div class="list-group list-group-flush">
-                                    <a href="#installation" class="list-group-item list-group-item-action">Installation</a>
-                                    <a href="#basic-usage" class="list-group-item list-group-item-action">Basic Usage</a>
-                                    <a href="#authentication" class="list-group-item list-group-item-action">Authentication</a>
-                                    <a href="#sending-messages" class="list-group-item list-group-item-action">Sending Messages</a>
-                                    <a href="#receiving-messages" class="list-group-item list-group-item-action">Receiving Messages</a>
-                                    <a href="#media-handling" class="list-group-item list-group-item-action">Media Handling</a>
-                                    <a href="#groups" class="list-group-item list-group-item-action">Groups</a>
-                                    <a href="#encryption" class="list-group-item list-group-item-action">Encryption</a>
-                                    <a href="#complete-implementation" class="list-group-item list-group-item-action">Complete Implementation</a>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="list-arhitectura" role="tabpanel" aria-labelledby="list-arhitectura-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Arhitectura Bibliotecii</h2>
+                                
+                                <p>Bocksup folosește o arhitectură modulară bazată pe conceptul de "layers" (straturi), similar cu modelul OSI pentru rețele:</p>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-dark">
+                                        <thead>
+                                            <tr>
+                                                <th>Layer</th>
+                                                <th>Responsabilitate</th>
+                                                <th>Module Principale</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Interface Layer</td>
+                                                <td>API de nivel înalt pentru aplicații</td>
+                                                <td>bocksup.layers.interface</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Axolotl Layer</td>
+                                                <td>Implementarea Signal Protocol</td>
+                                                <td>bocksup.layers.axolotl</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Protocol Layer</td>
+                                                <td>Serializarea și deserializarea mesajelor</td>
+                                                <td>bocksup.layers.protocol</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Network Layer</td>
+                                                <td>Comunicarea prin WebSocket și HTTP</td>
+                                                <td>bocksup.layers.network</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <h4 class="mt-4">Stack Builder</h4>
+                                <p>Pentru a utiliza biblioteca, se creează un "stack" care conectează toate straturile necesare:</p>
+                                
+                                <pre class="p-3 bg-dark"><code>from bocksup import create_stack
+
+# Crearea unui stack cu toate straturile
+stack = create_stack()
+
+# Sau cu straturi specificate
+stack = create_stack(
+    interface=True,
+    axolotl=True,
+    protocol=True,
+    network=True
+)</code></pre>
+                                
+                                <h4 class="mt-4">Diagrama Arhitecturii</h4>
+                                <p>Fluxul de date între straturile arhitecturii:</p>
+                                
+                                <div class="alert alert-info">
+                                    <p><strong>Aplicație</strong> ↔ Interface Layer ↔ Axolotl Layer ↔ Protocol Layer ↔ Network Layer ↔ <strong>Serverele WhatsApp</strong></p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Documentation Content -->
-                    <div class="col-md-9">
-                        <div class="card">
+                    <div class="tab-pane fade" id="list-autentificare" role="tabpanel" aria-labelledby="list-autentificare-list">
+                        <div class="card bg-dark text-light">
                             <div class="card-body">
-                                <section id="installation" class="mb-5">
-                                    <h2>Installation</h2>
-                                    <p>Install Bocksup using pip:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>pip install bocksup</code></pre>
-                                    
-                                    <p>For development or the latest features, install directly from GitHub:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>pip install git+https://github.com/yourusername/bocksup.git</code></pre>
-                                    
-                                    <h4>Dependencies</h4>
-                                    <p>Bocksup requires the following dependencies:</p>
-                                    <ul>
-                                        <li>Python 3.8+</li>
-                                        <li>aiohttp</li>
-                                        <li>websockets</li>
-                                        <li>construct</li>
-                                        <li>pycryptodome</li>
-                                        <li>email-validator</li>
-                                    </ul>
-                                </section>
+                                <h2 class="card-title">Autentificare</h2>
                                 
-                                <section id="basic-usage" class="mb-5">
-                                    <h2>Basic Usage</h2>
-                                    <p>Here's a simple example of using Bocksup to send a WhatsApp message:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>import asyncio
-from bocksup import create_client
+                                <p>Bocksup suportă multiple metode de autentificare pentru conectarea la serverele WhatsApp:</p>
+                                
+                                <h4 class="mt-4">Autentificare cu Număr și Parolă</h4>
+                                <pre class="p-3 bg-dark"><code>from bocksup import auth
 
-async def main():
-    # Create a WhatsApp client
-    client = create_client("phone_number", "password")
+# Autentificare cu număr de telefon și parolă
+authenticator = auth.Authenticator()
+result = await authenticator.login("+40712345678", "password123")
+
+if result.success:
+    print(f"Autentificare reușită: {result.user_id}")
+else:
+    print(f"Eroare de autentificare: {result.error_message}")</code></pre>
+                                
+                                <h4 class="mt-4">Obținerea unui Cod de Asociere (Pairing Code)</h4>
+                                <pre class="p-3 bg-dark"><code>from bocksup import auth
+
+# Solicitare cod de asociere
+result = await auth.request_pairing_code("+40712345678")
+
+if result.success:
+    print(f"Codul de asociere: {result.pairing_code}")
+    print(f"Valabil pentru: {result.expiration_time} secunde")
+else:
+    print(f"Eroare la solicitarea codului: {result.error_message}")</code></pre>
+                                
+                                <h4 class="mt-4">Utilizarea Tokenurilor de Sesiune</h4>
+                                <pre class="p-3 bg-dark"><code>from bocksup import auth
+
+# Salvarea tokenului după autentificare
+token = result.session_token
+
+# Autentificare ulterioară cu token salvat
+authenticator = auth.Authenticator()
+result = await authenticator.login_with_token(token)
+
+if result.success:
+    print("Autentificare cu token reușită")
+else:
+    print("Tokenul a expirat sau este invalid")</code></pre>
+                                
+                                <div class="alert alert-warning mt-4">
+                                    <h5>Considerații de Securitate</h5>
+                                    <p>
+                                        Este recomandat să stocați în siguranță tokenurile de sesiune și 
+                                        să implementați măsuri de securitate adecvate pentru a proteja datele
+                                        de autentificare.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="list-mesagerie" role="tabpanel" aria-labelledby="list-mesagerie-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Mesagerie</h2>
+                                
+                                <p>Modulul de mesagerie permite trimiterea și primirea mesajelor prin WhatsApp:</p>
+                                
+                                <h4 class="mt-4">Trimiterea Mesajelor Text</h4>
+                                <pre class="p-3 bg-dark"><code>from bocksup import messaging
+
+# Crearea unui client de mesagerie
+message_client = messaging.MessageClient(stack)
+
+# Trimiterea unui mesaj text
+result = await message_client.send_text(
+    to="+40712345678",
+    text="Salut! Acesta este un mesaj de test."
+)
+
+if result.success:
+    print(f"Mesaj trimis cu ID: {result.message_id}")
+else:
+    print(f"Eroare la trimiterea mesajului: {result.error}")</code></pre>
+                                
+                                <h4 class="mt-4">Primirea Mesajelor</h4>
+                                <pre class="p-3 bg-dark"><code>from bocksup import messaging
+
+# Înregistrarea unui handler pentru mesaje primite
+@message_client.on_message
+async def handle_message(message):
+    print(f"Mesaj primit de la {message.sender}:")
+    print(f"Text: {message.text}")
+    print(f"Timestamp: {message.timestamp}")
     
-    # Connect to WhatsApp
-    connected = await client.connect()
-    
-    if connected:
-        # Send a message
-        result = await client.send_text_message(
-            "recipient_number", 
-            "Hello from Bocksup!"
-        )
-        print(f"Message sent: {result}")
-        
-    await client.disconnect()
-
-if __name__ == "__main__":
-    asyncio.run(main())</code></pre>
-                                </section>
+    # Răspuns automat
+    if "salut" in message.text.lower():
+        await message_client.send_text(
+            to=message.sender,
+            text="Salut! Sunt un bot automat."
+        )</code></pre>
                                 
-                                <section id="authentication" class="mb-5">
-                                    <h2>Authentication</h2>
-                                    <p>Bocksup supports two authentication methods:</p>
-                                    
-                                    <h4>1. Password Authentication</h4>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>from bocksup import create_client
-
-# Create a client with phone number and password
-client = create_client("phone_number", "password")</code></pre>
-                                    
-                                    <h4>2. QR Code Authentication (WhatsApp Web style)</h4>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>from bocksup import create_client
-
-# Create a client without password for QR code auth
-client = create_client("phone_number")
-
-# When connecting, it will provide QR code data
-connected = await client.connect()  # Will trigger QR code authentication</code></pre>
-                                    
-                                    <div class="alert alert-warning">
-                                        <h5>Alpha Version Notice</h5>
-                                        <p>Authentication is not fully functional yet. See the "Complete Implementation" section for details on testing and developing this feature.</p>
-                                    </div>
-                                </section>
-                                
-                                <section id="sending-messages" class="mb-5">
-                                    <h2>Sending Messages</h2>
-                                    <h4>Text Messages</h4>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>await client.send_text_message("recipient_number", "Hello!")</code></pre>
-                                    
-                                    <h4>Media Messages</h4>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>await client.send_image("recipient_number", "/path/to/image.jpg")
-await client.send_voice_note("recipient_number", "/path/to/audio.mp3")
-await client.send_video("recipient_number", "/path/to/video.mp4")</code></pre>
-                                </section>
-                                
-                                <section id="receiving-messages" class="mb-5">
-                                    <h2>Receiving Messages</h2>
-                                    <p>Register handler functions to process incoming messages:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>async def message_handler(message_data):
-    print(f"Received message: {message_data['text']}")
-    print(f"From: {message_data['from']}")
-    print(f"Timestamp: {message_data['timestamp']}")
-    
-# Register the handler
-client.register_message_handler(message_handler)</code></pre>
-                                </section>
-                                
-                                <section id="media-handling" class="mb-5">
-                                    <h2>Media Handling</h2>
-                                    <p>Examples of media handling operations:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code># Media download
-await client.download_media(message_data, "downloads/")
-
-# Media upload
-media_info = await client.upload_media("/path/to/file.jpg")
-await client.send_media_message("recipient", media_info)</code></pre>
-                                </section>
-                                
-                                <section id="groups" class="mb-5">
-                                    <h2>Groups</h2>
-                                    <p>Manage WhatsApp groups:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code># Create a group
-group_id = await client.create_group("Group Name", ["participant1", "participant2"])
-
-# Send message to a group
-await client.send_text_message(group_id, "Hello group!")
-
-# Add participant
-await client.add_participant_to_group(group_id, "new_participant")
-
-# Remove participant
-await client.remove_participant_from_group(group_id, "participant_to_remove")</code></pre>
-                                </section>
-                                
-                                <section id="encryption" class="mb-5">
-                                    <h2>Encryption</h2>
-                                    <p>Bocksup implements the Signal Protocol for end-to-end encryption. This is handled automatically, but you can access the encryption layer:</p>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>from bocksup import SignalProtocol
-
-# Create a Signal Protocol instance
-signal = SignalProtocol()
-
-# Generate keys
-identity_key = signal.identity_key_pair
-
-# Encrypt data
-encrypted = signal.encrypt(message, recipient_key)
-
-# Decrypt data
-decrypted = signal.decrypt(encrypted_message, private_key)</code></pre>
-                                </section>
-                                
-                                <section id="complete-implementation" class="mb-5">
-                                    <h2>Complete Implementation</h2>
-                                    <div class="alert alert-info">
-                                        <h5>Alpha Stage Development</h5>
-                                        <p>Bocksup is currently in alpha development. To help complete the implementation, follow these steps:</p>
-                                    </div>
-                                    
-                                    <h4>1. Testing with Real Servers</h4>
-                                    <pre class="bg-dark text-light p-3 rounded"><code>import asyncio
-from bocksup import test_server_connection
-
-async def test():
-    # Basic connection test
-    results = await test_server_connection()
-    print(results)
-    
-    # Test with phone number for pairing code
-    # results = await test_server_connection("1234567890")  # Use a real number
-    # print(results)
-
-if __name__ == "__main__":
-    asyncio.run(test())</code></pre>
-                                    
-                                    <h4>2. Protocol Analysis</h4>
-                                    <p>Use tools to analyze the WhatsApp Web protocol:</p>
-                                    <ul>
-                                        <li>Use Chrome DevTools to monitor the WebSocket traffic on WhatsApp Web</li>
-                                        <li>Use Wireshark to capture network packets</li>
-                                        <li>Use mitmproxy to intercept and analyze HTTPS traffic</li>
-                                    </ul>
-                                    
-                                    <h4>3. Signal Protocol Implementation</h4>
-                                    <p>Focus on implementing the complete Signal protocol:</p>
-                                    <ul>
-                                        <li>Extended Triple Diffie-Hellman (X3DH) key exchange</li>
-                                        <li>Double Ratchet algorithm</li>
-                                        <li>Pre-key bundles</li>
-                                        <li>Session management</li>
-                                    </ul>
-                                    
-                                    <p>Reference the <a href="https://signal.org/docs/" target="_blank">official Signal protocol documentation</a> and existing implementations like <a href="https://github.com/signalapp/libsignal-protocol-javascript" target="_blank">libsignal-protocol-javascript</a>.</p>
-                                </section>
+                                <h4 class="mt-4">Tipuri de Mesaje Suportate</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-dark">
+                                        <thead>
+                                            <tr>
+                                                <th>Tip Mesaj</th>
+                                                <th>Metodă</th>
+                                                <th>Status Implementare</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Text</td>
+                                                <td><code>send_text()</code></td>
+                                                <td>Implementat</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Locație</td>
+                                                <td><code>send_location()</code></td>
+                                                <td>Implementat</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Contact</td>
+                                                <td><code>send_contact()</code></td>
+                                                <td>Implementat</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Imagine</td>
+                                                <td><code>send_image()</code></td>
+                                                <td>Parțial implementat</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Video</td>
+                                                <td><code>send_video()</code></td>
+                                                <td>Planificat</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Audio</td>
+                                                <td><code>send_audio()</code></td>
+                                                <td>Planificat</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Document</td>
+                                                <td><code>send_document()</code></td>
+                                                <td>Planificat</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alte tab-uri pentru documentație -->
+                    <div class="tab-pane fade" id="list-criptare" role="tabpanel" aria-labelledby="list-criptare-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Criptare</h2>
+                                <p>Bocksup implementează Signal Protocol pentru criptarea end-to-end a mesajelor.</p>
+                                <p>Documentație detaliată în dezvoltare...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="list-grupuri" role="tabpanel" aria-labelledby="list-grupuri-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Grupuri</h2>
+                                <p>Funcționalitatea pentru grupuri este în dezvoltare și va fi disponibilă în versiunile viitoare.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="list-media" role="tabpanel" aria-labelledby="list-media-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Media</h2>
+                                <p>Funcționalitatea pentru manipularea media este în dezvoltare și va fi disponibilă în versiunile viitoare.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="list-erori" role="tabpanel" aria-labelledby="list-erori-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Gestionarea Erorilor</h2>
+                                <p>Bocksup oferă un sistem robust de gestionare și tratare a erorilor.</p>
+                                <p>Documentație detaliată în dezvoltare...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="list-api" role="tabpanel" aria-labelledby="list-api-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-body">
+                                <h2 class="card-title">Referință API</h2>
+                                <p>Documentația completă a API-ului este în dezvoltare.</p>
+                                <a href="#" class="btn btn-primary">Documentație API (în curând)</a>
                             </div>
                         </div>
                     </div>
@@ -253,13 +383,20 @@ if __name__ == "__main__":
             </div>
         </div>
     </div>
-
-    <footer class="mt-5 py-3 bg-dark">
-        <div class="container text-center">
-            <p class="text-light mb-0">Bocksup v0.2.0 | MIT License | Not affiliated with WhatsApp Inc.</p>
+    
+    <footer class="bg-dark text-light mt-5 py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>© 2025 Bocksup - Biblioteca pentru integrare WhatsApp</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>Versiune: {{ version }}</p>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

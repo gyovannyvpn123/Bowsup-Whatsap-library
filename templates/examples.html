@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html lang="ro" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Examples - Bocksup WhatsApp Library</title>
+    <title>Exemple - Bocksup</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Bocksup</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,536 +16,276 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
+                        <a class="nav-link" href="/">Acasă</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/about">About</a>
+                        <a class="nav-link" href="/about">Despre</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/docs">Documentation</a>
+                        <a class="nav-link" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/examples">Examples</a>
+                        <a class="nav-link active" aria-current="page" href="/examples">Exemple</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/debug">Debug</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5">
+    <div class="container mt-4">
         <div class="row">
-            <div class="col-lg-10 mx-auto">
-                <h1 class="display-4 text-center mb-4">Examples</h1>
-                
-                <div class="alert alert-info mb-4">
-                    <p class="mb-0"><strong>Note:</strong> These examples demonstrate the intended API usage. Complete WhatsApp server functionality requires the implementation steps detailed in the documentation.</p>
+            <div class="col-md-3">
+                <div class="list-group mb-4" id="list-tab" role="tablist">
+                    <a class="list-group-item list-group-item-action active bg-dark text-light" id="list-echo-list" data-bs-toggle="list" href="#list-echo" role="tab" aria-controls="list-echo">Echo Bot</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-notificare-list" data-bs-toggle="list" href="#list-notificare" role="tab" aria-controls="list-notificare">Serviciu Notificări</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-media-list" data-bs-toggle="list" href="#list-media" role="tab" aria-controls="list-media">Partajare Media</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-cli-list" data-bs-toggle="list" href="#list-cli" role="tab" aria-controls="list-cli">CLI pentru WhatsApp</a>
+                    <a class="list-group-item list-group-item-action bg-dark text-light" id="list-web-list" data-bs-toggle="list" href="#list-web" role="tab" aria-controls="list-web">Aplicație Web</a>
                 </div>
-                
-                <!-- Basic Echo Bot Example -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="mb-0">Basic Echo Bot</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>A simple bot that echoes back any received message:</p>
-                        <pre class="bg-dark text-light p-3 rounded"><code>"""
-Basic echo bot example using Bocksup.
+            </div>
+            <div class="col-md-9">
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="list-echo" role="tabpanel" aria-labelledby="list-echo-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <h2>Echo Bot</h2>
+                            </div>
+                            <div class="card-body">
+                                <p>Acest exemplu simplu demonstrează cum să creați un bot care răspunde automat la mesajele primite.</p>
 
-This bot connects to WhatsApp and echoes back any received message.
+                                <pre class="p-3 bg-dark"><code>#!/usr/bin/env python3
 """
+Echo Bot pentru WhatsApp folosind Bocksup
 
-import asyncio
-import logging
-from bocksup import create_client
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("echo_bot")
-
-# WhatsApp credentials
-PHONE_NUMBER = "your_phone_number"  # e.g., "12025550108"
-PASSWORD = "your_password"          # Optional, if not provided QR auth will be used
-
-async def main():
-    # Create client
-    client = create_client(PHONE_NUMBER, PASSWORD)
-    
-    # Register message handler
-    client.register_message_handler(message_handler)
-    
-    # Connect to WhatsApp
-    try:
-        logger.info("Connecting to WhatsApp...")
-        connected = await client.connect()
-        
-        if connected:
-            logger.info("Connected to WhatsApp!")
-            
-            # Keep the connection alive
-            while True:
-                await asyncio.sleep(60)
-                
-    except Exception as e:
-        logger.error(f"Error: {e}")
-    finally:
-        # Disconnect when done
-        await client.disconnect()
-        logger.info("Disconnected from WhatsApp")
-
-async def message_handler(message_data):
-    """Handle incoming messages by echoing them back."""
-    if 'text' in message_data and message_data.get('type') == 'text':
-        sender = message_data.get('from')
-        text = message_data.get('text')
-        
-        logger.info(f"Message from {sender}: {text}")
-        
-        # Echo the message back
-        if sender:
-            reply_text = f"You said: {text}"
-            await client.send_text_message(sender, reply_text)
-            logger.info(f"Sent echo reply to {sender}")
-
-if __name__ == "__main__":
-    asyncio.run(main())</code></pre>
-                    </div>
-                </div>
-                
-                <!-- WhatsApp Bot with Commands -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="mb-0">WhatsApp Bot with Commands</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>A more advanced bot that responds to specific commands:</p>
-                        <pre class="bg-dark text-light p-3 rounded"><code>"""
-Command-based WhatsApp bot example using Bocksup.
-
-This bot handles specific commands like:
-- !help - Show help message
-- !time - Display the current time
-- !echo [text] - Echo back text
-"""
-
-import asyncio
-import logging
-import time
-from datetime import datetime
-from bocksup import create_client
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("command_bot")
-
-# WhatsApp credentials
-PHONE_NUMBER = "your_phone_number"
-PASSWORD = None  # Use QR code authentication
-
-# Bot commands
-COMMANDS = {
-    "!help": "Show this help message",
-    "!time": "Show the current time",
-    "!echo": "Echo back the text after the command"
-}
-
-async def main():
-    # Create client
-    client = create_client(PHONE_NUMBER, PASSWORD)
-    
-    # Register handlers
-    client.register_message_handler(message_handler)
-    
-    # Connect to WhatsApp
-    try:
-        logger.info("Connecting to WhatsApp...")
-        connected = await client.connect()
-        
-        if connected:
-            logger.info("Connected to WhatsApp!")
-            
-            # Keep the connection alive
-            while True:
-                await asyncio.sleep(60)
-                
-    except Exception as e:
-        logger.error(f"Error: {e}")
-    finally:
-        # Disconnect when done
-        await client.disconnect()
-        logger.info("Disconnected from WhatsApp")
-
-async def message_handler(message_data):
-    """Handle incoming messages and process commands."""
-    if 'text' in message_data and message_data.get('type') == 'text':
-        sender = message_data.get('from')
-        text = message_data.get('text', '').strip()
-        
-        if not sender:
-            return
-            
-        # Process commands
-        if text.startswith('!'):
-            await process_command(sender, text)
-        
-async def process_command(sender, text):
-    """Process bot commands."""
-    parts = text.split(' ', 1)
-    command = parts[0].lower()
-    args = parts[1] if len(parts) > 1 else ''
-    
-    if command == '!help':
-        # Send help message
-        help_text = "Available commands:\\n"
-        for cmd, desc in COMMANDS.items():
-            help_text += f"{cmd} - {desc}\\n"
-        await client.send_text_message(sender, help_text)
-        
-    elif command == '!time':
-        # Send current time
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        await client.send_text_message(sender, f"Current time: {now}")
-        
-    elif command == '!echo':
-        # Echo back the text
-        if args:
-            await client.send_text_message(sender, args)
-        else:
-            await client.send_text_message(sender, "Echo what? Use !echo [text]")
-            
-    else:
-        # Unknown command
-        await client.send_text_message(
-            sender, 
-            f"Unknown command: {command}\\nType !help for available commands"
-        )
-
-# Global client instance
-client = None
-
-if __name__ == "__main__":
-    asyncio.run(main())</code></pre>
-                    </div>
-                </div>
-                
-                <!-- Group Management Example -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="mb-0">Group Management</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>Managing WhatsApp groups with Bocksup:</p>
-                        <pre class="bg-dark text-light p-3 rounded"><code>"""
-WhatsApp group management example using Bocksup.
-
-This example demonstrates:
-- Creating groups
-- Adding participants
-- Sending messages to groups
-- Handling group events
-"""
-
-import asyncio
-import logging
-from bocksup import create_client
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("group_manager")
-
-# WhatsApp credentials
-PHONE_NUMBER = "your_phone_number"
-PASSWORD = "your_password"
-
-# Example group data
-GROUP_NAME = "Bocksup Test Group"
-PARTICIPANTS = [
-    "1234567890",  # Replace with actual phone numbers
-    "0987654321"
-]
-
-async def main():
-    # Create client
-    client = create_client(PHONE_NUMBER, PASSWORD)
-    
-    # Register handlers
-    client.register_message_handler(message_handler)
-    client.register_group_notification_handler(group_notification_handler)
-    
-    # Connect to WhatsApp
-    try:
-        logger.info("Connecting to WhatsApp...")
-        connected = await client.connect()
-        
-        if connected:
-            logger.info("Connected to WhatsApp!")
-            
-            # Create a new group
-            group_id = await create_test_group(client)
-            
-            # Send welcome message
-            if group_id:
-                await client.send_text_message(
-                    group_id, 
-                    "Welcome to the Bocksup test group!"
-                )
-            
-            # Keep the connection alive
-            while True:
-                await asyncio.sleep(60)
-                
-    except Exception as e:
-        logger.error(f"Error: {e}")
-    finally:
-        # Disconnect when done
-        await client.disconnect()
-        logger.info("Disconnected from WhatsApp")
-
-async def create_test_group(client):
-    """Create a test group and add participants."""
-    try:
-        # Create the group
-        logger.info(f"Creating group: {GROUP_NAME}")
-        group_id = await client.create_group(GROUP_NAME, PARTICIPANTS)
-        logger.info(f"Group created with ID: {group_id}")
-        
-        # Add more participants if needed
-        # await client.add_participant_to_group(group_id, "5551234567")
-        
-        return group_id
-    except Exception as e:
-        logger.error(f"Failed to create group: {e}")
-        return None
-
-async def message_handler(message_data):
-    """Handle incoming messages."""
-    if message_data.get('is_group') and 'text' in message_data:
-        group_id = message_data.get('from')
-        sender = message_data.get('participant')
-        text = message_data.get('text')
-        
-        logger.info(f"Group message from {sender} in group {group_id}: {text}")
-        
-        # You can respond to specific group messages here
-
-async def group_notification_handler(notification_data):
-    """Handle group notifications (joins, leaves, etc.)."""
-    group_id = notification_data.get('group_id')
-    notification_type = notification_data.get('type')
-    
-    if notification_type == 'add':
-        # Someone was added to the group
-        added_by = notification_data.get('author')
-        participants = notification_data.get('participants', [])
-        
-        logger.info(f"New participants added to group {group_id} by {added_by}: {participants}")
-        
-    elif notification_type == 'remove':
-        # Someone was removed from the group
-        removed_by = notification_data.get('author')
-        participants = notification_data.get('participants', [])
-        
-        logger.info(f"Participants removed from group {group_id} by {removed_by}: {participants}")
-        
-    elif notification_type == 'subject':
-        # Group subject was changed
-        changed_by = notification_data.get('author')
-        new_subject = notification_data.get('subject')
-        
-        logger.info(f"Group {group_id} subject changed to '{new_subject}' by {changed_by}")
-
-if __name__ == "__main__":
-    asyncio.run(main())</code></pre>
-                    </div>
-                </div>
-                
-                <!-- Media Handling Example -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="mb-0">Media Handling</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>Handling media files with Bocksup:</p>
-                        <pre class="bg-dark text-light p-3 rounded"><code>"""
-Media handling example using Bocksup.
-
-This example demonstrates:
-- Sending images, audio, and video
-- Receiving and downloading media
-- Processing received media files
+Acest script creează un bot simplu care răspunde cu același mesaj
+pe care l-a primit de la utilizator.
 """
 
 import asyncio
 import logging
 import os
-from bocksup import create_client
+import sys
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("media_handler")
+# Configurare logging
+logging.basicConfig(level=logging.INFO, 
+                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("EchoBot")
 
-# WhatsApp credentials
-PHONE_NUMBER = "your_phone_number"
-PASSWORD = "your_password"
+try:
+    import bocksup
+except ImportError:
+    logger.error("Biblioteca Bocksup nu este instalată. Folosiți 'pip install bocksup'")
+    sys.exit(1)
 
-# Recipient for media messages
-RECIPIENT = "recipient_number"  # Replace with actual number
+class EchoBot:
+    """
+    Bot simplu care răspunde cu același mesaj primit.
+    """
+    
+    def __init__(self, phone_number=None, password=None):
+        """
+        Inițializează botul.
+        
+        Args:
+            phone_number: Număr de telefon pentru autentificare
+            password: Parolă sau token de autentificare
+        """
+        self.phone_number = phone_number
+        self.password = password
+        self.client = None
+        self.connected = False
+        
+    async def connect(self):
+        """
+        Conectare la serverele WhatsApp.
+        """
+        try:
+            # Creează un client WhatsApp
+            self.client = bocksup.create_client()
+            
+            # Înregistrează handlers pentru diferite tipuri de evenimente
+            self.client["messaging"].register_message_handler(self._handle_message)
+            
+            # Conectare și autentificare
+            logger.info(f"Conectare cu numărul {self.phone_number}...")
+            result = await self.client["auth"].login(self.phone_number, self.password)
+            
+            if not result.success:
+                logger.error(f"Eroare la autentificare: {result.error}")
+                return False
+                
+            logger.info("Autentificare reușită!")
+            self.connected = True
+            return True
+            
+        except Exception as e:
+            logger.error(f"Eroare la conectare: {str(e)}")
+            return False
+            
+    async def _handle_message(self, message):
+        """
+        Handler pentru mesaje primite.
+        
+        Args:
+            message: Mesajul primit
+        """
+        try:
+            if not message.text:
+                return
+                
+            logger.info(f"Mesaj primit de la {message.sender}: {message.text}")
+            
+            # Trimite același mesaj înapoi
+            await self.client["messaging"].send_text_message(
+                to=message.sender,
+                text=f"Echo: {message.text}"
+            )
+            
+            logger.info(f"Mesaj trimis către {message.sender}")
+            
+        except Exception as e:
+            logger.error(f"Eroare la procesarea mesajului: {str(e)}")
 
-# Media paths (replace with actual file paths)
-IMAGE_PATH = "example_image.jpg"
-AUDIO_PATH = "example_audio.mp3"
-VIDEO_PATH = "example_video.mp4"
-
-# Directory for downloaded media
-DOWNLOAD_DIR = "received_media/"
+    async def run(self):
+        """
+        Rulează botul.
+        """
+        if not self.connected:
+            success = await self.connect()
+            if not success:
+                return
+                
+        try:
+            # Așteaptă la infinit pentru a procesa mesajele
+            logger.info("Bot pornit și în așteptare pentru mesaje...")
+            while True:
+                await asyncio.sleep(1)
+                
+        except KeyboardInterrupt:
+            logger.info("Oprire bot la cererea utilizatorului...")
+        except Exception as e:
+            logger.error(f"Eroare neașteptată: {str(e)}")
+        finally:
+            # Deconectare
+            if self.connected:
+                await self.client["connection"].disconnect()
+                logger.info("Deconectat de la serverele WhatsApp")
 
 async def main():
-    # Create client
-    client = create_client(PHONE_NUMBER, PASSWORD)
+    # Obține credențialele din variabile de mediu sau comandă
+    phone = os.environ.get("WHATSAPP_PHONE", "")
+    password = os.environ.get("WHATSAPP_PASSWORD", "")
     
-    # Register handlers
-    client.register_message_handler(message_handler)
-    
-    # Create download directory if it doesn't exist
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    
-    # Connect to WhatsApp
-    try:
-        logger.info("Connecting to WhatsApp...")
-        connected = await client.connect()
-        
-        if connected:
-            logger.info("Connected to WhatsApp!")
-            
-            # Send example media files
-            await send_example_media(client)
-            
-            # Keep the connection alive
-            while True:
-                await asyncio.sleep(60)
-                
-    except Exception as e:
-        logger.error(f"Error: {e}")
-    finally:
-        # Disconnect when done
-        await client.disconnect()
-        logger.info("Disconnected from WhatsApp")
-
-async def send_example_media(client):
-    """Send example media files."""
-    try:
-        # Send image
-        if os.path.exists(IMAGE_PATH):
-            logger.info(f"Sending image: {IMAGE_PATH}")
-            await client.send_image(
-                RECIPIENT, 
-                IMAGE_PATH, 
-                caption="Test image from Bocksup"
-            )
-        
-        # Send audio
-        if os.path.exists(AUDIO_PATH):
-            logger.info(f"Sending audio: {AUDIO_PATH}")
-            await client.send_voice_note(RECIPIENT, AUDIO_PATH)
-        
-        # Send video
-        if os.path.exists(VIDEO_PATH):
-            logger.info(f"Sending video: {VIDEO_PATH}")
-            await client.send_video(
-                RECIPIENT, 
-                VIDEO_PATH, 
-                caption="Test video from Bocksup"
-            )
-    except Exception as e:
-        logger.error(f"Failed to send media: {e}")
-
-async def message_handler(message_data):
-    """Handle incoming messages, especially media messages."""
-    message_type = message_data.get('type')
-    sender = message_data.get('from')
-    
-    if not sender:
+    if not phone:
+        logger.error("Numărul de telefon nu este configurat. Setați WHATSAPP_PHONE.")
         return
         
-    # Handle different types of media
-    if message_type in ['image', 'audio', 'video', 'document']:
-        await handle_media_message(message_data)
-    elif message_type == 'text':
-        text = message_data.get('text', '')
-        logger.info(f"Text message from {sender}: {text}")
-        
-        # If the message is asking for media, send an example
-        if 'send me a photo' in text.lower():
-            if os.path.exists(IMAGE_PATH):
-                await client.send_image(sender, IMAGE_PATH, caption="Here's your requested photo")
-        
-async def handle_media_message(message_data):
-    """Process a received media message."""
-    message_type = message_data.get('type')
-    sender = message_data.get('from')
-    media_url = message_data.get('media_url')
-    
-    if not media_url:
-        return
-        
-    try:
-        # Download the media
-        file_path = os.path.join(DOWNLOAD_DIR, f"{message_data.get('id')}.{get_extension(message_type)}")
-        
-        logger.info(f"Downloading {message_type} from {sender} to {file_path}")
-        
-        await client.download_media(message_data, file_path)
-        
-        logger.info(f"Downloaded {message_type} to {file_path}")
-        
-        # Process the media based on type
-        if message_type == 'image':
-            # You could process images here (resize, apply filters, etc.)
-            # For example: process_image(file_path)
-            await client.send_text_message(sender, "I received your image!")
-            
-        elif message_type == 'audio':
-            # You could process audio here (transcribe, analyze, etc.)
-            # For example: transcribe_audio(file_path)
-            await client.send_text_message(sender, "I received your audio!")
-            
-        elif message_type == 'video':
-            # You could process video here
-            await client.send_text_message(sender, "I received your video!")
-            
-        elif message_type == 'document':
-            # You could process documents here
-            await client.send_text_message(sender, "I received your document!")
-            
-    except Exception as e:
-        logger.error(f"Failed to process media message: {e}")
-
-def get_extension(message_type):
-    """Get file extension based on message type."""
-    extensions = {
-        'image': 'jpg',
-        'audio': 'mp3',
-        'video': 'mp4',
-        'document': 'pdf'
-    }
-    return extensions.get(message_type, 'bin')
-
-# Global client instance
-client = None
+    # Creează și rulează botul
+    bot = EchoBot(phone_number=phone, password=password)
+    await bot.run()
 
 if __name__ == "__main__":
     asyncio.run(main())</code></pre>
+
+                                <h4 class="mt-4">Instrucțiuni de Utilizare</h4>
+                                <ol>
+                                    <li>Instalați biblioteca Bocksup cu <code>pip install bocksup</code></li>
+                                    <li>Setați variabilele de mediu pentru autentificare:
+                                        <ul>
+                                            <li><code>WHATSAPP_PHONE</code> - numărul de telefon</li>
+                                            <li><code>WHATSAPP_PASSWORD</code> - parola sau token-ul</li>
+                                        </ul>
+                                    </li>
+                                    <li>Rulați scriptul cu <code>python echo_bot.py</code></li>
+                                </ol>
+                                
+                                <div class="alert alert-info">
+                                    <p><strong>Notă:</strong> Acest exemplu simplu poate fi extins pentru a adăuga mai multă logică sau pentru a integra cu alte servicii.</p>
+                                </div>
+                                
+                                <h4 class="mt-4">Descărcare</h4>
+                                <a href="#" class="btn btn-primary">Descarcă echantionul de cod</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="list-notificare" role="tabpanel" aria-labelledby="list-notificare-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <h2>Serviciu de Notificări</h2>
+                            </div>
+                            <div class="card-body">
+                                <p>Exemplu de serviciu care trimite notificări programate prin WhatsApp.</p>
+                                <p>Pentru un exemplu complet, verificați codul sursă în repositoriul principal.</p>
+                                <div class="alert alert-warning">
+                                    <p>În dezvoltare. Disponibil în curând.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="list-media" role="tabpanel" aria-labelledby="list-media-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <h2>Partajare Media</h2>
+                            </div>
+                            <div class="card-body">
+                                <p>Exemplu de aplicație pentru partajarea de conținut media prin WhatsApp.</p>
+                                <div class="alert alert-warning">
+                                    <p>În dezvoltare. Disponibil în curând.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="list-cli" role="tabpanel" aria-labelledby="list-cli-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <h2>CLI pentru WhatsApp</h2>
+                            </div>
+                            <div class="card-body">
+                                <p>Exemplu de interfață în linia de comandă pentru WhatsApp folosind Bocksup.</p>
+                                <div class="alert alert-warning">
+                                    <p>În dezvoltare. Disponibil în curând.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="list-web" role="tabpanel" aria-labelledby="list-web-list">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <h2>Aplicație Web</h2>
+                            </div>
+                            <div class="card-body">
+                                <p>Exemplu de integrare a bibliotecii Bocksup într-o aplicație web Flask.</p>
+                                <div class="alert alert-warning">
+                                    <p>În dezvoltare. Disponibil în curând.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="mt-5 py-3 bg-dark">
-        <div class="container text-center">
-            <p class="text-light mb-0">Bocksup v0.2.0 | MIT License | Not affiliated with WhatsApp Inc.</p>
+    <footer class="bg-dark text-light mt-5 py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>© 2025 Bocksup - Biblioteca pentru integrare WhatsApp</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>Versiune: {{ version }}</p>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

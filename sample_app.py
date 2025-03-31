@@ -59,15 +59,42 @@ async def create_and_test_client(phone_number: str, password: Optional[str] = No
         password: Optional password or authentication token
     """
     logger.info(f"Creating WhatsApp client for {phone_number}...")
-    client = bocksup.create_client(phone_number, password)
     
-    logger.info(f"Client created with the following components:")
-    logger.info(f"- Authentication module: {client['auth']}")
-    logger.info(f"- Protocol stack: {client['stack']}")
-    
-    # In a complete implementation, we would connect and interact with WhatsApp here
-    
-    return client
+    try:
+        client = bocksup.create_client(phone_number, password)
+        
+        # În versiunea actuală, client poate fi un dicționar sau un obiect MessagingClient
+        if isinstance(client, dict):
+            logger.info(f"Client creat cu următoarele componente:")
+            for k, v in client.items():
+                logger.info(f"- {k}: {v}")
+        else:
+            # Presupunem că este un obiect MessagingClient
+            logger.info(f"Client creat: {client}")
+            logger.info(f"Se încearcă conectarea...")
+            
+            # Încercăm o conectare simplă pentru a testa funcționalitatea
+            try:
+                connected = await client.connect()
+                logger.info(f"Conectat: {'✓' if connected else '✗'}")
+                
+                if connected:
+                    # Dacă suntem conectați, încearcă o operațiune simplă
+                    logger.info("Se așteaptă câteva secunde pentru a primi notificări...")
+                    await asyncio.sleep(5)
+                    
+                    # Deconectare
+                    logger.info("Deconectare...")
+                    await client.disconnect()
+                
+            except Exception as e:
+                logger.error(f"Eroare la conectare: {e}")
+        
+        # In a complete implementation, we would connect and interact with WhatsApp here
+        return client
+    except Exception as e:
+        logger.error(f"Eroare la crearea clientului: {e}")
+        return None
 
 
 async def main():
@@ -80,11 +107,28 @@ async def main():
         command = "info"
     
     if command == "info":
-        logger.info("Bocksup library info:")
-        logger.info(f"- Version: {bocksup.__version__}")
-        # List the available modules
+        logger.info("Informații despre biblioteca Bocksup:")
+        logger.info(f"- Versiune: {bocksup.__version__ if hasattr(bocksup, '__version__') else 'necunoscută'}")
+        
+        # Liste modulele disponibile
         modules = [m for m in dir(bocksup) if not m.startswith('__')]
-        logger.info(f"- Available modules: {', '.join(modules)}")
+        logger.info(f"- Module disponibile: {', '.join(modules)}")
+        
+        # Verifică funcționalitățile cheie
+        logger.info("Funcționalități cheie:")
+        logger.info(f"- Autentificare: {'✓' if hasattr(bocksup, 'auth') else '✗'}")
+        logger.info(f"- Mesagerie: {'✓' if hasattr(bocksup, 'messaging') else '✗'}")
+        logger.info(f"- Criptare: {'✓' if hasattr(bocksup, 'encryption') else '✗'}")
+        logger.info(f"- Grupuri: {'✓' if hasattr(bocksup, 'groups') else '✗'}")
+        logger.info(f"- Media: {'✓' if hasattr(bocksup, 'media') else '✗'}")
+        logger.info(f"- Înregistrare: {'✓' if hasattr(bocksup, 'registration') else '✗'}")
+        
+        # Informații despre versiunea protocol
+        try:
+            protocol_version = bocksup.PROTOCOL_VERSION if hasattr(bocksup, 'PROTOCOL_VERSION') else "0.4 (implicit)" 
+            logger.info(f"- Versiune protocol WhatsApp: {protocol_version}")
+        except:
+            logger.info("- Versiune protocol WhatsApp: necunoscută")
         
     elif command == "test":
         phone_number = sys.argv[2] if len(sys.argv) > 2 else PHONE_NUMBER

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html lang="ro" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bocksup - WhatsApp Integration Library</title>
+    <title>Bocksup - Biblioteca de Integrare WhatsApp</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Bocksup</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,157 +16,140 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        <a class="nav-link active" aria-current="page" href="/">Acasă</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/about">About</a>
+                        <a class="nav-link" href="/about">Despre</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/docs">Documentation</a>
+                        <a class="nav-link" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/examples">Examples</a>
+                        <a class="nav-link" href="/examples">Exemple</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/debug">Debug</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5">
+    <div class="container mt-4">
         <div class="row">
-            <div class="col-lg-8 mx-auto text-center">
-                <h1 class="display-4">Bocksup</h1>
-                <p class="lead mb-4">A Python library that replicates yowsup's WhatsApp integration functionality with improved stability, error handling, and modern Python compatibility.</p>
-                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                    <a href="/docs" class="btn btn-primary btn-lg px-4 gap-3">Documentation</a>
-                    <a href="/examples" class="btn btn-outline-secondary btn-lg px-4">Examples</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-5">
-            <div class="col-md-4">
-                <div class="card h-100">
+            <div class="col-md-8">
+                <div class="card bg-dark text-light">
                     <div class="card-body">
-                        <h5 class="card-title">Modern Python Support</h5>
-                        <p class="card-text">Compatible with Python 3.8+ and leverages modern language features and async patterns.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Signal Protocol Encryption</h5>
-                        <p class="card-text">Implements the Signal Protocol for secure end-to-end encrypted messaging.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Improved Error Handling</h5>
-                        <p class="card-text">Robust error handling and recovery mechanisms for more stable applications.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-md-6 offset-md-3">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        Library Status
-                    </div>
-                    <div class="card-body">
-                        <div id="library-info-loading">Loading library information...</div>
-                        <div id="library-info" class="d-none">
-                            <p><strong>Version:</strong> <span id="library-version"></span></p>
-                            <p><strong>Available Features:</strong></p>
-                            <ul id="library-features"></ul>
+                        <h1 class="card-title">Bocksup</h1>
+                        <h3 class="card-subtitle mb-3 text-muted">Biblioteca modernă pentru integrare WhatsApp</h3>
+                        <p class="card-text">
+                            Bocksup este o bibliotecă Python pentru integrarea cu WhatsApp, dezvoltată ca o alternativă 
+                            modernă și stabilă la yowsup. Biblioteca oferă funcționalități complete pentru comunicarea 
+                            cu serverele WhatsApp, gestionarea mesajelor, și manipularea media.
+                        </p>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <strong>Status bibliotecă:</strong> {{ "Disponibilă" if available else "Nu este disponibilă" }}
+                            <br>
+                            <strong>Versiune:</strong> {{ version }}
                         </div>
-                        <div id="library-error" class="d-none alert alert-warning"></div>
+                        
+                        <h4 class="mt-4">Funcționalități Suportate</h4>
+                        <div class="row">
+                            {% for name, status in features.items() %}
+                            <div class="col-md-4 mb-2">
+                                <div class="card {{ 'bg-success' if status else 'bg-secondary' }} text-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ name }}</h5>
+                                        <p class="card-text">{{ "✓ Disponibil" if status else "✗ Indisponibil" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="/docs" class="btn btn-primary">Documentație</a>
+                            <a href="/examples" class="btn btn-secondary">Exemple</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="row mt-5">
-            <div class="col-lg-10 mx-auto">
-                <h3>Sample Code</h3>
-                <pre class="bg-dark text-light p-3 rounded"><code>import asyncio
-from bocksup import create_client
-
-async def main():
-    # Create a WhatsApp client
-    client = create_client("phone_number", "password")
-    
-    # Connect to WhatsApp
-    connected = await client.connect()
-    
-    if connected:
-        # Register message handlers
-        client.register_message_handler(message_handler)
-        
-        # Send a message
-        result = await client.send_text_message(
-            "recipient_number", 
-            "Hello from Bocksup!"
-        )
-        print(f"Message sent: {result}")
-    
-    # Keep the connection alive
-    await asyncio.sleep(60)
-    await client.disconnect()
-
-async def message_handler(message_data):
-    print(f"Message received: {message_data}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
-</code></pre>
+            
+            <div class="col-md-4">
+                <div class="card bg-dark text-light">
+                    <div class="card-body">
+                        <h4 class="card-title">Test Conexiune</h4>
+                        <p class="card-text">Testează conexiunea la serverele WhatsApp.</p>
+                        
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Număr de telefon (opțional)</label>
+                            <input type="text" class="form-control" id="phone_number" placeholder="+40712345678">
+                            <div class="form-text">Folosit pentru a testa obținerea codului de asociere.</div>
+                        </div>
+                        
+                        <button class="btn btn-success" id="test_connection_btn">Testează Conexiunea</button>
+                        
+                        <div class="mt-3" id="connection_result" style="display: none;">
+                            <h5>Rezultate:</h5>
+                            <pre id="connection_result_pre" class="p-2 bg-dark" style="max-height: 200px; overflow-y: auto;"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card bg-dark text-light mt-3">
+                    <div class="card-body">
+                        <h4 class="card-title">Resurse</h4>
+                        <ul class="list-group list-group-flush bg-dark">
+                            <li class="list-group-item bg-dark text-light">Documentație WhatsApp</li>
+                            <li class="list-group-item bg-dark text-light">Ghid de implementare</li>
+                            <li class="list-group-item bg-dark text-light">Referințe API</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-    <footer class="mt-5 py-3 bg-dark">
-        <div class="container text-center">
-            <p class="text-light mb-0">Bocksup v0.2.0 | MIT License | Not affiliated with WhatsApp Inc.</p>
+    
+    <footer class="bg-dark text-light mt-5 py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>© 2025 Bocksup - Biblioteca pentru integrare WhatsApp</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>Versiune: {{ version }}</p>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Fetch library information
-            fetch('/api/library_info')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('library-info-loading').classList.add('d-none');
-                    
-                    if (data.status === 'available') {
-                        document.getElementById('library-info').classList.remove('d-none');
-                        document.getElementById('library-version').textContent = data.version;
-                        
-                        const featuresList = document.getElementById('library-features');
-                        for (const [feature, available] of Object.entries(data.features)) {
-                            const li = document.createElement('li');
-                            li.className = available ? 'text-success' : 'text-secondary';
-                            li.textContent = feature.charAt(0).toUpperCase() + feature.slice(1);
-                            if (!available) {
-                                li.textContent += ' (Not available)';
-                            }
-                            featuresList.appendChild(li);
-                        }
-                    } else {
-                        document.getElementById('library-error').classList.remove('d-none');
-                        document.getElementById('library-error').textContent = data.error;
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('library-info-loading').classList.add('d-none');
-                    document.getElementById('library-error').classList.remove('d-none');
-                    document.getElementById('library-error').textContent = 'Error loading library information: ' + error.message;
+        document.getElementById('test_connection_btn').addEventListener('click', async function() {
+            try {
+                const phoneNumber = document.getElementById('phone_number').value.trim();
+                const resultDiv = document.getElementById('connection_result');
+                const resultPre = document.getElementById('connection_result_pre');
+                
+                resultDiv.style.display = 'block';
+                resultPre.innerText = 'Se testează conexiunea...';
+                
+                const response = await fetch('/api/test_connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone_number: phoneNumber || null })
                 });
+                
+                const data = await response.json();
+                resultPre.innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Eroare:', error);
+                document.getElementById('connection_result').style.display = 'block';
+                document.getElementById('connection_result_pre').innerText = 'Eroare: ' + error.message;
+            }
         });
     </script>
 </body>
