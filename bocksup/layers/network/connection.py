@@ -485,3 +485,109 @@ class Connection(Layer):
         """
         await self.disconnect()
         self._reconnect_attempts = 0
+        
+        
+class WhatsAppConnection(Connection):
+    """
+    Implementare specializată a conexiunii pentru WhatsApp.
+    
+    Această clasă extinde Connection de bază cu funcționalități specifice
+    WhatsApp, cum ar fi gestionarea mesajelor și serializarea/deserializarea
+    protocolului WhatsApp.
+    """
+    
+    def __init__(self):
+        """Inițializează conexiunea WhatsApp."""
+        super().__init__(use_websocket=True)
+        self._callbacks = {}
+        self._message_counter = 0
+        self._pending_messages = {}
+        
+    async def send_message(self, message: Dict[str, Any]) -> str:
+        """
+        Trimite un mesaj către serverul WhatsApp.
+        
+        Args:
+            message: Mesajul de trimis
+            
+        Returns:
+            tag: Identificatorul mesajului
+            
+        Raises:
+            ConnectionError: Dacă trimiterea eșuează
+        """
+        if not isinstance(message, dict):
+            raise ValueError("Mesajul trebuie să fie un dicționar")
+            
+        # Generează un tag unic pentru mesaj dacă nu există deja
+        tag = message.get("tag", f"message_{int(time.time())}_{self._message_counter}")
+        self._message_counter += 1
+        
+        # Adaugă tagul la mesaj dacă nu există
+        if "tag" not in message:
+            message["tag"] = tag
+            
+        # Înregistrează mesajul ca fiind în așteptare
+        self._pending_messages[tag] = message
+        
+        # Trimite mesajul
+        success = await self.send(message)
+        
+        if not success:
+            del self._pending_messages[tag]
+            raise ConnectionError("Nu s-a putut trimite mesajul")
+            
+        return tag
+        
+    def register_callback(self, message_type: str, callback: Callable) -> None:
+        """
+        Înregistrează un callback pentru un anumit tip de mesaj.
+        
+        Args:
+            message_type: Tipul de mesaj ('message', 'receipt', 'presence', etc.)
+            callback: Funcția de callback
+        """
+        if message_type not in self._callbacks:
+            self._callbacks[message_type] = []
+            
+        self._callbacks[message_type].append(callback)
+        
+    def notify_upper(self, data: Union[bytes, Dict[str, Any]]) -> None:
+        """
+        Procesează datele primite și notifică layer-ul superior.
+        
+        Override pentru metoda din clasa de bază pentru a procesa
+        mesajele WhatsApp și a apela callback-urile potrivite.
+        
+        Args:
+            data: Datele primite
+        """
+        # Încearcă să deserializeze datele
+        try:
+            if isinstance(data, bytes):
+                # Încearcă să decodifice în JSON
+                try:
+                    data_str = data.decode('utf-8')
+                    message = json.loads(data_str)
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    # Dacă nu este JSON, trimite datele ca atare
+                    super().notify_upper(data)
+                    return
+            else:
+                message = data
+                
+            # Verifică dacă avem un tip de mesaj
+            message_type = message.get("type", "unknown")
+            
+            # Apelează callback-urile înregistrate pentru acest tip
+            if message_type in self._callbacks:
+                for callback in self._callbacks[message_type]:
+                    asyncio.create_task(callback(message))
+                    
+            # Notifică și layer-ul superior (pentru compatibilitate cu yowsup)
+            super().notify_upper(message)
+            
+        except Exception as e:
+            logger.error(f"Eroare la procesarea mesajului primit: {e}")
+            # Trimite datele originale mai departe
+            super().notify_upper(data)

@@ -31,12 +31,17 @@ from bocksup.stack.builder import StackBuilder
 from bocksup.auth.authenticator import Authenticator
 from bocksup.layers.protocol.websocket_protocol import WebSocketProtocol
 from bocksup.layers.protocol.serialization import Serializer
+from bocksup.layers.network.connection import WhatsAppConnection
 from bocksup.common.exceptions import (
     AuthenticationError, 
     ConnectionError, 
     ParseError, 
-    ProtocolError
+    ProtocolError,
+    MessageError
 )
+
+# Import messaging
+from bocksup.messaging.client import MessagingClient, create_client
 
 # Setup core modules
 from bocksup.messaging import messages
@@ -60,6 +65,19 @@ def format_phone_number(phone: str) -> str:
     # Remove any non-digit characters
     digits_only = re.sub(r'\D', '', phone)
     return digits_only
+
+def phone_to_jid(phone: str) -> str:
+    """
+    Convert a phone number to a JID (Jabber ID) used by WhatsApp.
+    
+    Args:
+        phone: Phone number to convert
+        
+    Returns:
+        JID for the phone number
+    """
+    formatted_phone = format_phone_number(phone)
+    return f"{formatted_phone}@s.whatsapp.net"
 
 # Make key classes available at package level
 def create_stack(credentials: Tuple[str, str], encryption_enabled: bool = True):
@@ -100,24 +118,4 @@ async def test_server_connection(phone_number: Optional[str] = None) -> Dict:
     from bocksup.test_server_connection import test_server_connection as tsc
     return await tsc(phone_number)
 
-# Create a full client with simplified interface
-def create_client(phone_number: str, password: Optional[str] = None):
-    """
-    Create a WhatsApp client with the provided credentials.
-    
-    Args:
-        phone_number: Phone number in international format
-        password: Password or authentication token
-        
-    Returns:
-        A configured WhatsApp client ready to connect
-    """
-    auth = Authenticator(phone_number, password or "")
-    stack = create_stack((phone_number, password or ""))
-    # In a complete implementation, this would return a full client
-    # with messaging capabilities
-    return {
-        "auth": auth,
-        "stack": stack,
-        "phone": phone_number
-    }
+# Importul pentru create_client este acum gestionat direct din bocksup.messaging.client
