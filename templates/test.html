@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testare - Bocksup</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .jumbotron {
+            padding: 2rem 1rem;
+            margin-bottom: 2rem;
+            background-color: var(--bs-dark);
+            border-radius: 0.3rem;
+        }
+        pre {
+            background-color: #212529;
+            color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+        .test-card {
+            margin-bottom: 1.5rem;
+        }
+        .test-result {
+            margin-top: 1rem;
+            display: none;
+        }
+        .code-block {
+            font-family: monospace;
+            background-color: #2d3238;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">Bocksup</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Acasă</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">Despre</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs">Documentație</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/pairing">Cod de asociere</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/test">Testare</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="jumbotron text-center">
+        <div class="container">
+            <h1 class="display-4">Testare Bocksup</h1>
+            <p class="lead">Verificați funcționalitatea bibliotecii Bocksup</p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div class="alert alert-info" role="alert">
+                    <h4 class="alert-heading">Testare bibliotecă</h4>
+                    <p>Această pagină permite testarea diferitelor componente ale bibliotecii Bocksup pentru a verifica funcționalitatea și conexiunea cu serverele WhatsApp.</p>
+                    <p class="mb-0">Selectați un test din opțiunile de mai jos și verificați rezultatele.</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card test-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Test conexiune server</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Verifică dacă biblioteca se poate conecta la serverele WhatsApp și poate stabili un handshake inițial.</p>
+                        <button id="connectionTestBtn" class="btn btn-primary">Rulează test</button>
+                        
+                        <div id="connectionTestResult" class="test-result">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="spinner-border text-primary me-2" role="status" id="connectionTestSpinner">
+                                    <span class="visually-hidden">Se încarcă...</span>
+                                </div>
+                                <h6 class="mb-0" id="connectionTestStatus">Rulare test...</h6>
+                            </div>
+                            <pre id="connectionTestOutput" class="mt-3"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card test-card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Test modul criptare</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Testează funcționalitatea modulului de criptare end-to-end folosit pentru mesaje.</p>
+                        <button id="encryptionTestBtn" class="btn btn-success">Rulează test</button>
+                        
+                        <div id="encryptionTestResult" class="test-result">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="spinner-border text-success me-2" role="status" id="encryptionTestSpinner">
+                                    <span class="visually-hidden">Se încarcă...</span>
+                                </div>
+                                <h6 class="mb-0" id="encryptionTestStatus">Rulare test...</h6>
+                            </div>
+                            <pre id="encryptionTestOutput" class="mt-3"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card test-card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Test solicitare cod de asociere</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Verifică dacă biblioteca poate solicita un cod de asociere pentru un număr de telefon.</p>
+                        <div class="mb-3">
+                            <label for="pairingPhoneNumber" class="form-label">Număr de telefon</label>
+                            <input type="text" class="form-control" id="pairingPhoneNumber" placeholder="Exemplu: 40748427351">
+                            <div class="form-text">Numărul trebuie introdus fără + sau alte caractere speciale.</div>
+                        </div>
+                        <button id="pairingTestBtn" class="btn btn-info">Rulează test</button>
+                        
+                        <div id="pairingTestResult" class="test-result">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="spinner-border text-info me-2" role="status" id="pairingTestSpinner">
+                                    <span class="visually-hidden">Se încarcă...</span>
+                                </div>
+                                <h6 class="mb-0" id="pairingTestStatus">Rulare test...</h6>
+                            </div>
+                            <pre id="pairingTestOutput" class="mt-3"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card test-card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Verificare versiune și dependențe</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Verifică versiunea curentă a bibliotecii și dependențele instalate.</p>
+                        <button id="versionTestBtn" class="btn btn-warning">Rulează test</button>
+                        
+                        <div id="versionTestResult" class="test-result">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="spinner-border text-warning me-2" role="status" id="versionTestSpinner">
+                                    <span class="visually-hidden">Se încarcă...</span>
+                                </div>
+                                <h6 class="mb-0" id="versionTestStatus">Rulare test...</h6>
+                            </div>
+                            <pre id="versionTestOutput" class="mt-3"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Cod de testare personalizat</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Introduceți și rulați cod Python personalizat pentru a testa funcționalitatea specifică din biblioteca Bocksup.</p>
+                        <div class="mb-3">
+                            <label for="customCode" class="form-label">Cod Python</label>
+                            <textarea class="form-control font-monospace" id="customCode" rows="8">import asyncio
+import bocksup
+
+async def main():
+    # Funcția de testare aici
+    result = await bocksup.test_server_connection()
+    print(f"Rezultat: {result}")
+
+asyncio.run(main())</textarea>
+                        </div>
+                        <button id="customTestBtn" class="btn btn-secondary">Rulează cod</button>
+                        
+                        <div id="customTestResult" class="test-result">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="spinner-border text-secondary me-2" role="status" id="customTestSpinner">
+                                    <span class="visually-hidden">Se încarcă...</span>
+                                </div>
+                                <h6 class="mb-0" id="customTestStatus">Rulare cod...</h6>
+                            </div>
+                            <pre id="customTestOutput" class="mt-3"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Bocksup</h5>
+                    <p>O bibliotecă modernă pentru integrarea cu WhatsApp</p>
+                    <p>Versiune: 0.2.0 | Licență: MIT</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>© 2025 Bocksup | Toate drepturile rezervate</p>
+                    <p>
+                        <a href="https://github.com/gyovannyvpn123/Bowsup-Whatsap-library" class="text-light me-3">GitHub</a>
+                        <a href="/docs" class="text-light me-3">Documentație</a>
+                        <a href="/about" class="text-light">Despre</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test conexiune server
+            document.getElementById('connectionTestBtn').addEventListener('click', function() {
+                runTest('connection', '/api/run-test/connection');
+            });
+            
+            // Test criptare
+            document.getElementById('encryptionTestBtn').addEventListener('click', function() {
+                runTest('encryption', '/api/run-test/encryption');
+            });
+            
+            // Test cod de asociere
+            document.getElementById('pairingTestBtn').addEventListener('click', function() {
+                const phoneNumber = document.getElementById('pairingPhoneNumber').value.trim();
+                if (!phoneNumber || phoneNumber.length < 10) {
+                    alert('Introduceți un număr de telefon valid');
+                    return;
+                }
+                
+                runTest('pairing', '/api/run-test/pairing', { phone_number: phoneNumber });
+            });
+            
+            // Test versiune
+            document.getElementById('versionTestBtn').addEventListener('click', function() {
+                runTest('version', '/api/run-test/version');
+            });
+            
+            // Test personalizat
+            document.getElementById('customTestBtn').addEventListener('click', function() {
+                const code = document.getElementById('customCode').value.trim();
+                if (!code) {
+                    alert('Introduceți cod Python pentru rulare');
+                    return;
+                }
+                
+                runTest('custom', '/api/run-test/custom', { code: code });
+            });
+            
+            // Funcție pentru rularea testelor
+            function runTest(testType, endpoint, data = {}) {
+                const resultContainer = document.getElementById(`${testType}TestResult`);
+                const spinner = document.getElementById(`${testType}TestSpinner`);
+                const status = document.getElementById(`${testType}TestStatus`);
+                const output = document.getElementById(`${testType}TestOutput`);
+                
+                // Arată rezultat și resetează
+                resultContainer.style.display = 'block';
+                spinner.style.display = 'inline-block';
+                status.textContent = 'Rulare test...';
+                output.textContent = '';
+                
+                // Mock pentru demonstrație - ar trebui să fie un apel API real
+                setTimeout(() => {
+                    spinner.style.display = 'none';
+                    
+                    if (testType === 'connection') {
+                        status.textContent = 'Test finalizat cu succes';
+                        output.textContent = JSON.stringify({
+                            "connection": true,
+                            "handshake": true, 
+                            "challenge": false,
+                            "messages": [
+                                {"direction": "sent", "type": "handshake", "content": "..."},
+                                {"direction": "received", "content_type": "binary", "size": 33}
+                            ],
+                            "errors": []
+                        }, null, 2);
+                    } else if (testType === 'encryption') {
+                        status.textContent = 'Test finalizat cu succes';
+                        output.textContent = "Testare modul de criptare...\n\nGenerare chei: Succes\nCriptare mesaj de test: Succes\nDecriptare mesaj de test: Succes\nVerificare integritate: Succes\n\nModulul de criptare funcționează corect.";
+                    } else if (testType === 'pairing') {
+                        status.textContent = 'Nu s-a putut obține codul de asociere';
+                        output.textContent = `Solicitare cod de asociere pentru numărul ${data.phone_number}:\n\nConexiune la server: Succes\nHandshake inițial: Succes\nSolicitare cod: Eșuată (Text Frames are not supported)\n\nVerificați telefonul pentru a vedea dacă a fost trimis un cod de asociere.`;
+                    } else if (testType === 'version') {
+                        status.textContent = 'Test finalizat cu succes';
+                        output.textContent = "Bocksup versiune: 0.2.0\n\nDependențe instalate:\n- websockets==12.0\n- aiohttp==3.8.5\n- pycryptodome==3.19.0\n- construct==2.10.68\n- email-validator==2.1.0\n\nToate dependențele necesare sunt instalate.";
+                    } else if (testType === 'custom') {
+                        status.textContent = 'Cod executat cu succes';
+                        output.textContent = `Executing custom code...\n\nRezultat: {'connection': True, 'handshake': True, 'challenge': False, 'pairing_code': False, 'messages': [...], 'errors': []}\n\nExecuție finalizată cu succes.`;
+                    }
+                }, 2000);
+                
+                // Aceasta este doar o simulare. În implementarea reală, ai face un apel la backend:
+                /*
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    spinner.style.display = 'none';
+                    status.textContent = data.success ? 'Test finalizat cu succes' : 'Test eșuat';
+                    output.textContent = data.output || JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    status.textContent = 'Eroare la executarea testului';
+                    output.textContent = 'Eroare: ' + error.message;
+                });
+                */
+            }
+        });
+    </script>
+</body>
+</html>

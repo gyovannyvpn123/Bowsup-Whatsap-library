@@ -1,22 +1,35 @@
 <!DOCTYPE html>
-<html lang="ro" data-bs-theme="dark">
+<html data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bocksup - Biblioteca de Integrare WhatsApp</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <title>Bocksup - WhatsApp Integration Library</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .jumbotron {
+            padding: 4rem 2rem;
+            margin-bottom: 2rem;
+            background-color: var(--bs-dark);
+            border-radius: 0.3rem;
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--bs-info);
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Bocksup</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <a class="navbar-brand fw-bold" href="/">Bocksup</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/">Acasă</a>
+                        <a class="nav-link active" href="/">Acasă</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/about">Despre</a>
@@ -25,132 +38,137 @@
                         <a class="nav-link" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/examples">Exemple</a>
+                        <a class="nav-link" href="/pairing">Cod de asociere</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/debug">Debug</a>
+                        <a class="nav-link" href="/test">Testare</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="jumbotron text-center">
+        <div class="container">
+            <h1 class="display-4">Bocksup</h1>
+            <p class="lead">O bibliotecă Python modernă pentru integrarea cu WhatsApp</p>
+            <hr class="my-4">
+            <p>Bocksup oferă o implementare completă a protocolului WhatsApp, permițând aplicațiilor să trimită și să primească mesaje, să gestioneze conținut media, să participe la grupuri și multe altele.</p>
+            <a class="btn btn-primary btn-lg" href="/docs" role="button">Explorează documentația</a>
+            <a class="btn btn-outline-info btn-lg" href="/pairing" role="button">Obține cod de asociere</a>
+        </div>
+    </div>
+
+    <div class="container my-5">
         <div class="row">
-            <div class="col-md-8">
-                <div class="card bg-dark text-light">
-                    <div class="card-body">
-                        <h1 class="card-title">Bocksup</h1>
-                        <h3 class="card-subtitle mb-3 text-muted">Biblioteca modernă pentru integrare WhatsApp</h3>
-                        <p class="card-text">
-                            Bocksup este o bibliotecă Python pentru integrarea cu WhatsApp, dezvoltată ca o alternativă 
-                            modernă și stabilă la yowsup. Biblioteca oferă funcționalități complete pentru comunicarea 
-                            cu serverele WhatsApp, gestionarea mesajelor, și manipularea media.
-                        </p>
-                        
-                        <div class="alert alert-info" role="alert">
-                            <strong>Status bibliotecă:</strong> {{ "Disponibilă" if available else "Nu este disponibilă" }}
-                            <br>
-                            <strong>Versiune:</strong> {{ version }}
-                        </div>
-                        
-                        <h4 class="mt-4">Funcționalități Suportate</h4>
-                        <div class="row">
-                            {% for name, status in features.items() %}
-                            <div class="col-md-4 mb-2">
-                                <div class="card {{ 'bg-success' if status else 'bg-secondary' }} text-light">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ name }}</h5>
-                                        <p class="card-text">{{ "✓ Disponibil" if status else "✗ Indisponibil" }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        
-                        <div class="mt-4">
-                            <a href="/docs" class="btn btn-primary">Documentație</a>
-                            <a href="/examples" class="btn btn-secondary">Exemple</a>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">🔐</div>
+                        <h3 class="card-title">Autentificare Sigură</h3>
+                        <p class="card-text">Autentificare simplă și sigură cu suport pentru coduri de asociere și autentificare multi-dispozitiv.</p>
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-4">
-                <div class="card bg-dark text-light">
-                    <div class="card-body">
-                        <h4 class="card-title">Test Conexiune</h4>
-                        <p class="card-text">Testează conexiunea la serverele WhatsApp.</p>
-                        
-                        <div class="mb-3">
-                            <label for="phone_number" class="form-label">Număr de telefon (opțional)</label>
-                            <input type="text" class="form-control" id="phone_number" placeholder="+40712345678">
-                            <div class="form-text">Folosit pentru a testa obținerea codului de asociere.</div>
-                        </div>
-                        
-                        <button class="btn btn-success" id="test_connection_btn">Testează Conexiunea</button>
-                        
-                        <div class="mt-3" id="connection_result" style="display: none;">
-                            <h5>Rezultate:</h5>
-                            <pre id="connection_result_pre" class="p-2 bg-dark" style="max-height: 200px; overflow-y: auto;"></pre>
-                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">💬</div>
+                        <h3 class="card-title">Gestionare Mesaje</h3>
+                        <p class="card-text">API simplu și intuitiv pentru trimiterea și primirea mesajelor, inclusiv suport pentru conținut media.</p>
                     </div>
                 </div>
-                
-                <div class="card bg-dark text-light mt-3">
-                    <div class="card-body">
-                        <h4 class="card-title">Resurse</h4>
-                        <ul class="list-group list-group-flush bg-dark">
-                            <li class="list-group-item bg-dark text-light">Documentație WhatsApp</li>
-                            <li class="list-group-item bg-dark text-light">Ghid de implementare</li>
-                            <li class="list-group-item bg-dark text-light">Referințe API</li>
-                        </ul>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">🔄</div>
+                        <h3 class="card-title">Conexiune Fiabilă</h3>
+                        <p class="card-text">Management automat al conexiunii, incluzând reconectare, tratarea erorilor și notificări de stare.</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <h2>Exemplu de utilizare</h2>
+                <pre class="bg-dark text-light p-3 rounded"><code>import asyncio
+from bocksup import create_client
+
+async def main():
+    # Creează clientul cu numărul de telefon
+    client = create_client("40712345678")
     
-    <footer class="bg-dark text-light mt-5 py-3">
+    # Conectează și autentifică
+    await client.connect()
+    
+    # Trimite un mesaj
+    result = await client.send_text_message(
+        to="40787654321", 
+        text="Salut de la Bocksup!"
+    )
+    
+    print(f"Mesaj trimis cu ID: {result['id']}")
+    
+    # Deconectare
+    await client.disconnect()
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+            </div>
+            <div class="col-md-6">
+                <h2>Caracteristici</h2>
+                <ul class="list-group">
+                    <li class="list-group-item d-flex">
+                        <span class="badge bg-success me-2">✓</span> 
+                        Autentificare cu cod de asociere
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <span class="badge bg-success me-2">✓</span> 
+                        Trimitere și primire mesaje text
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <span class="badge bg-success me-2">✓</span> 
+                        Criptare end-to-end
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <span class="badge bg-warning me-2">≈</span> 
+                        Suport pentru conținut media (în dezvoltare)
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <span class="badge bg-warning me-2">≈</span> 
+                        Gestionare grupuri (în dezvoltare)
+                    </li>
+                    <li class="list-group-item d-flex">
+                        <span class="badge bg-info me-2">+</span> 
+                        Compatibilitate deplină cu Python 3.x
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light py-4 mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <p>© 2025 Bocksup - Biblioteca pentru integrare WhatsApp</p>
+                    <h5>Bocksup</h5>
+                    <p>O bibliotecă modernă pentru integrarea cu WhatsApp</p>
+                    <p>Versiune: 0.2.0 | Licență: MIT</p>
                 </div>
-                <div class="col-md-6 text-end">
-                    <p>Versiune: {{ version }}</p>
+                <div class="col-md-6 text-md-end">
+                    <p>© 2025 Bocksup | Toate drepturile rezervate</p>
+                    <p>
+                        <a href="https://github.com/gyovannyvpn123/Bowsup-Whatsap-library" class="text-light me-3">GitHub</a>
+                        <a href="/docs" class="text-light me-3">Documentație</a>
+                        <a href="/about" class="text-light">Despre</a>
+                    </p>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.getElementById('test_connection_btn').addEventListener('click', async function() {
-            try {
-                const phoneNumber = document.getElementById('phone_number').value.trim();
-                const resultDiv = document.getElementById('connection_result');
-                const resultPre = document.getElementById('connection_result_pre');
-                
-                resultDiv.style.display = 'block';
-                resultPre.innerText = 'Se testează conexiunea...';
-                
-                const response = await fetch('/api/test_connection', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ phone_number: phoneNumber || null })
-                });
-                
-                const data = await response.json();
-                resultPre.innerText = JSON.stringify(data, null, 2);
-            } catch (error) {
-                console.error('Eroare:', error);
-                document.getElementById('connection_result').style.display = 'block';
-                document.getElementById('connection_result_pre').innerText = 'Eroare: ' + error.message;
-            }
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

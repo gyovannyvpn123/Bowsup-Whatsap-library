@@ -1,170 +1,232 @@
 <!DOCTYPE html>
-<html lang="ro" data-bs-theme="dark">
+<html data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Despre - Bocksup</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .jumbotron {
+            padding: 4rem 2rem;
+            margin-bottom: 2rem;
+            background-color: var(--bs-dark);
+            border-radius: 0.3rem;
+        }
+        .about-section {
+            margin-bottom: 3rem;
+        }
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 7px;
+            height: 100%;
+            width: 2px;
+            background-color: var(--bs-primary);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        .timeline-marker {
+            position: absolute;
+            top: 0;
+            left: -2rem;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--bs-primary);
+            border: 2px solid var(--bs-dark);
+        }
+        .timeline-date {
+            font-size: 0.9rem;
+            color: var(--bs-secondary);
+            margin-bottom: 0.25rem;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Bocksup</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <a class="navbar-brand fw-bold" href="/">Bocksup</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Acasă</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/about">Despre</a>
+                        <a class="nav-link active" href="/about">Despre</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/docs">Documentație</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/examples">Exemple</a>
+                        <a class="nav-link" href="/pairing">Cod de asociere</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/debug">Debug</a>
+                        <a class="nav-link" href="/test">Testare</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="card bg-dark text-light">
-            <div class="card-body">
-                <h1 class="card-title">Despre Proiectul Bocksup</h1>
-                <p class="card-text">
-                    Bocksup este o bibliotecă modernă pentru integrarea cu WhatsApp, dezvoltată ca o alternativă 
-                    îmbunătățită a bibliotecii yowsup, cu suport pentru Python 3.x și o stabilitate ridicată.
-                </p>
-                
-                <h3 class="mt-4">Motivația Proiectului</h3>
-                <p>
-                    Biblioteca a fost creată pentru a rezolva limitările bibliotecii originale yowsup:
-                </p>
-                <ul>
-                    <li>Lipsa suportului pentru versiunile moderne de Python</li>
-                    <li>Probleme de stabilitate în conexiunea cu serverele WhatsApp</li>
-                    <li>Gestionare slabă a erorilor și excepțiilor</li>
-                    <li>Implementare limitată a funcționalităților noi WhatsApp</li>
-                </ul>
-                
-                <h3 class="mt-4">Caracteristici Principale</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card bg-dark border-primary mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">Compatibilitate Python 3.x</h5>
-                                <p class="card-text">
-                                    Implementare completă în Python 3.11+ cu tipuri de date moderne și suport asyncio.
-                                </p>
-                            </div>
+    <div class="jumbotron text-center">
+        <div class="container">
+            <h1 class="display-4">Despre Bocksup</h1>
+            <p class="lead">Istorie, misiune și viziune</p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="about-section">
+                    <h2>Misiunea noastră</h2>
+                    <p class="lead">Să oferim dezvoltatorilor un instrument fiabil și modern pentru integrarea cu WhatsApp.</p>
+                    <p>Bocksup a fost creat pentru a moderniza și îmbunătăți bibliotecile existente pentru integrarea cu WhatsApp, oferind o alternativă robustă și actualizată pentru "yowsup" și alte biblioteci similare. Ne propunem să facilităm comunicarea programatică prin WhatsApp pentru aplicații legitime, respectând în același timp politicile WhatsApp și protejând datele utilizatorilor.</p>
+                </div>
+
+                <div class="about-section">
+                    <h2>Istoria proiectului</h2>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-date">Ianuarie 2025</div>
+                            <h5>Începutul dezvoltării</h5>
+                            <p>Proiectul Bocksup a fost inițiat ca o alternativă modernă la biblioteca yowsup, care nu mai este întreținută activ.</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-date">Februarie 2025</div>
+                            <h5>Prima versiune alfa</h5>
+                            <p>Implementarea inițială a protocolului de conexiune și autentificare la serverele WhatsApp.</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-date">Martie 2025</div>
+                            <h5>Versiunea 0.2.0 beta</h5>
+                            <p>Adăugarea suportului pentru autentificare cu cod de asociere și îmbunătățirea gestionării mesajelor.</p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card bg-dark border-primary mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">Arhitectură Modulară</h5>
-                                <p class="card-text">
-                                    Design modular cu layere separate pentru protocol, rețea, criptare și funcționalități.
-                                </p>
+                </div>
+
+                <div class="about-section">
+                    <h2>Caracteristici cheie</h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Compatibilitate modernă</h5>
+                                    <p class="card-text">Dezvoltat cu Python 3.x și menținem compatibilitatea cu cele mai recente protocoale WhatsApp.</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card bg-dark border-primary mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">Gestionare Robustă a Erorilor</h5>
-                                <p class="card-text">
-                                    Sistem de gestionare a erorilor îmbunătățit cu recuperare automată din situații problematice.
-                                </p>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">API asincron</h5>
+                                    <p class="card-text">Utilizează API-uri asincrone pentru performanță optimă și răspuns rapid.</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card bg-dark border-primary mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">Suport pentru Protocoalele Recente</h5>
-                                <p class="card-text">
-                                    Implementare actualizată a protocoalelor WhatsApp, inclusiv Signal Protocol pentru criptare.
-                                </p>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Gestionarea erorilor</h5>
+                                    <p class="card-text">Sistem robust de gestionare a erorilor pentru depanare ușoară și feedback informativ.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Autentificare multi-dispozitiv</h5>
+                                    <p class="card-text">Suport pentru modelul multi-dispozitiv al WhatsApp, inclusiv coduri de asociere.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <h3 class="mt-4">Comparație cu Yowsup</h3>
-                <table class="table table-dark">
-                    <thead>
-                        <tr>
-                            <th>Caracteristică</th>
-                            <th>Yowsup</th>
-                            <th>Bocksup</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Compatibilitate Python</td>
-                            <td>Python 2.7</td>
-                            <td>Python 3.11+</td>
-                        </tr>
-                        <tr>
-                            <td>Protocol WhatsApp</td>
-                            <td>Versiune veche</td>
-                            <td>Versiune actualizată</td>
-                        </tr>
-                        <tr>
-                            <td>Suport pentru criptare</td>
-                            <td>Axolotl vechi</td>
-                            <td>Signal Protocol modern</td>
-                        </tr>
-                        <tr>
-                            <td>Gestionare erori</td>
-                            <td>Limitată</td>
-                            <td>Robustă și detaliată</td>
-                        </tr>
-                        <tr>
-                            <td>Arhitectură</td>
-                            <td>Monolitică</td>
-                            <td>Modulară și extensibilă</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <h3 class="mt-4">Planuri de Viitor</h3>
-                <p>
-                    Proiectul Bocksup continuă să evolueze cu următoarele obiective:
-                </p>
-                <ul>
-                    <li>Implementarea completă a grupurilor și funcționalităților multimedia</li>
-                    <li>Suport pentru autentificare bazată pe QR code</li>
-                    <li>Optimizarea performanței pentru volume mari de mesaje</li>
-                    <li>Dezvoltarea unor instrumente avansate de debugging și monitorizare</li>
-                    <li>Documentație extinsă și exemple de integrare</li>
-                </ul>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Informații despre proiect</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Versiune</span>
+                                <span class="badge bg-primary">0.2.0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Licență</span>
+                                <span>MIT</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Platformă</span>
+                                <span>Python 3.9+</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Ultima actualizare</span>
+                                <span>31 Martie 2025</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Echipa</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Bocksup este dezvoltat și întreținut de o echipă dedicată de ingineri software și entuziaști ai comunicării digitale.</p>
+                        <p>Contribuțiile comunității sunt binevenite și încurajate!</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Contribuie</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Dorești să contribui la dezvoltarea Bocksup?</p>
+                        <a href="https://github.com/gyovannyvpn123/Bowsup-Whatsap-library" class="btn btn-outline-primary d-block">GitHub Repository</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    
-    <footer class="bg-dark text-light mt-5 py-3">
+
+    <footer class="bg-dark text-light py-4 mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <p>© 2025 Bocksup - Biblioteca pentru integrare WhatsApp</p>
+                    <h5>Bocksup</h5>
+                    <p>O bibliotecă modernă pentru integrarea cu WhatsApp</p>
+                    <p>Versiune: 0.2.0 | Licență: MIT</p>
                 </div>
-                <div class="col-md-6 text-end">
-                    <p>Versiune: {{ version }}</p>
+                <div class="col-md-6 text-md-end">
+                    <p>© 2025 Bocksup | Toate drepturile rezervate</p>
+                    <p>
+                        <a href="https://github.com/gyovannyvpn123/Bowsup-Whatsap-library" class="text-light me-3">GitHub</a>
+                        <a href="/docs" class="text-light me-3">Documentație</a>
+                        <a href="/about" class="text-light">Despre</a>
+                    </p>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
