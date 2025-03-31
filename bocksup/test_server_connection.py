@@ -36,6 +36,276 @@ logger = logging.getLogger(__name__)
 WHATSAPP_WEBSOCKET_URL = 'wss://web.whatsapp.com/ws/chat'
 USER_AGENT = 'WhatsApp/2.2412.54 Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
 
+async def test_server_connection(phone_number: Optional[str] = None) -> Dict:
+    """
+    Testează conexiunea la serverele WhatsApp.
+    
+    Această funcție încearcă să stabilească o conexiune cu serverele WhatsApp
+    și să execute un handshake inițial. Dacă este furnizat un număr de telefon,
+    va încerca și solicitarea unui pairing code.
+    
+    Args:
+        phone_number: Opțional, numărul de telefon pentru testarea pairing code-ului
+        
+    Returns:
+        Dict conținând rezultatele testelor cu următoarele chei:
+        - connection: bool - dacă conexiunea a reușit
+        - handshake: bool - dacă handshake-ul inițial a reușit
+        - challenge: bool - dacă a fost primit un challenge de autentificare
+        - pairing_code: bool - dacă a fost solicitat un pairing code (doar cu număr de telefon)
+        - messages: list - mesajele schimbate cu serverul
+        - errors: list - erori întâlnite
+    """
+    results = {
+        "connection": False,
+        "handshake": False,
+        "challenge": False,
+        "pairing_code": False,
+        "messages": [],
+        "errors": []
+    }
+    
+    session_id = f"test_session_{int(time.time())}"
+    client_id = f"bocksup_test_{int(time.time())}"
+    message_counter = 0
+    
+    try:
+        # Pregătește headerele WebSocket
+        headers = {
+            'User-Agent': USER_AGENT,
+            'Origin': 'https://web.whatsapp.com',
+            'Sec-WebSocket-Protocol': 'chat',
+            'Accept-Language': 'en-US,en;q=0.9'
+        }
+        
+        # Conectează la serverul WhatsApp
+        logger.info(f"Conectare la: {WHATSAPP_WEBSOCKET_URL}")
+        async with websockets.connect(
+            WHATSAPP_WEBSOCKET_URL,
+            extra_headers=headers,
+            ping_interval=None,
+            max_size=None
+        ) as websocket:
+            results["connection"] = True
+            
+            # Creează și trimite mesajul de handshake
+            message_tag = f"{int(time.time())}.--{message_counter}"
+            message_counter += 1
+            
+            handshake = {
+                "clientToken": client_id,
+                "serverToken": None,
+                "clientId": f"bocksup_test:{session_id}",
+                "tag": message_tag,
+                "type": "connect",
+                "protocolVersion": "0.4",
+                "connectType": "PHONE_CONNECTING",
+                "connectReason": "USER_ACTIVATED",
+                "features": {
+                    "supportsMultiDevice": True,
+                    "supportsE2EEncryption": True,
+                    "supportsQRLinking": True
+                }
+            }
+            
+            handshake_json = json.dumps(handshake)
+            logger.debug(f"Trimitere handshake: {handshake_json}")
+            await websocket.send(handshake_json)
+            
+            results["messages"].append({
+                "direction": "sent",
+                "type": "handshake",
+                "content": handshake
+            })
+            
+            # Așteaptă răspunsul la handshake
+            response = await websocket.recv()
+            logger.debug(f"Răspuns la handshake: {response[:200]}...")
+            
+            # Procesează răspunsul
+            challenge_data = None
+            
+            try:
+                # Parsează răspunsul
+                if isinstance(response, str):
+                    # Verifică dacă răspunsul este în formatul "tag,json"
+                    if "," in response:
+                        parts = response.split(",", 1)
+                        if len(parts) > 1:
+                            response_tag = parts[0]
+                            response_json = parts[1]
+                            
+                            try:
+                                parsed = json.loads(response_json)
+                                results["messages"].append({
+                                    "direction": "received",
+                                    "tag": response_tag,
+                                    "content": parsed
+                                })
+                                
+                                # Verifică dacă este un challenge de autentificare
+                                if isinstance(parsed, dict) and parsed.get("type") == "challenge":
+                                    results["handshake"] = True
+                                    results["challenge"] = True
+                                    challenge_data = parsed.get("data", {})
+                                    logger.info("Primit challenge de autentificare")
+                                    
+                                elif isinstance(parsed, list) and len(parsed) > 0 and parsed[0] == "Conn":
+                                    results["handshake"] = True
+                                    logger.info("Handshake reușit în format vechi")
+                                    
+                                else:
+                                    results["handshake"] = True
+                                    logger.info(f"Handshake reușit, tip răspuns: {parsed.get('type', 'necunoscut')}")
+                            except json.JSONDecodeError:
+                                logger.warning("Nu s-a putut parsa răspunsul JSON")
+                                results["errors"].append("Răspuns invalid la handshake")
+                        else:
+                            logger.warning(f"Format răspuns neașteptat: {response[:50]}")
+                            results["errors"].append("Format răspuns neașteptat")
+                    else:
+                        try:
+                            # Încearcă să parseze direct ca JSON
+                            parsed = json.loads(response)
+                            results["messages"].append({
+                                "direction": "received",
+                                "content": parsed
+                            })
+                            
+                            # Verifică tipul mesajului
+                            if isinstance(parsed, dict) and parsed.get("type") == "challenge":
+                                results["handshake"] = True
+                                results["challenge"] = True
+                                challenge_data = parsed.get("data", {})
+                                logger.info("Primit challenge de autentificare")
+                            else:
+                                results["handshake"] = True
+                                logger.info(f"Handshake reușit, tip răspuns: {parsed.get('type', 'necunoscut')}")
+                        except json.JSONDecodeError:
+                            logger.warning("Nu s-a putut parsa răspunsul ca JSON")
+                            results["errors"].append("Răspuns invalid la handshake")
+                else:
+                    logger.warning(f"Răspuns binar sau neașteptat: {type(response)}")
+                    results["errors"].append("Răspuns binar neașteptat")
+            except Exception as e:
+                logger.error(f"Eroare la procesarea răspunsului: {str(e)}")
+                results["errors"].append(f"Eroare la procesarea răspunsului: {str(e)}")
+            
+            # Dacă a fost furnizat un număr de telefon și am primit un challenge, solicită un pairing code
+            if phone_number and challenge_data:
+                logger.info(f"Solicitare pairing code pentru: {phone_number}")
+                
+                # Creează mesajul de solicitare a pairing code-ului
+                message_tag = f"{int(time.time())}.--{message_counter}"
+                message_counter += 1
+                
+                pairing_request = {
+                    "tag": message_tag,
+                    "type": "request",
+                    "method": "requestPairingCode",
+                    "params": {
+                        "phoneNumber": phone_number,
+                        "requestMeta": {
+                            "platform": "python",
+                            "deviceId": client_id,
+                            "sessionId": session_id
+                        }
+                    }
+                }
+                
+                pairing_request_json = json.dumps(pairing_request)
+                logger.debug(f"Trimitere solicitare pairing code: {pairing_request_json}")
+                await websocket.send(pairing_request_json)
+                
+                results["messages"].append({
+                    "direction": "sent",
+                    "type": "pairing_code_request",
+                    "content": pairing_request
+                })
+                
+                # Așteaptă răspunsul pentru pairing code
+                try:
+                    pairing_response = await asyncio.wait_for(websocket.recv(), timeout=10)
+                    logger.debug(f"Răspuns pairing code: {pairing_response[:200]}...")
+                    
+                    # Procesează răspunsul pentru a extrage pairing code-ul
+                    try:
+                        pairing_code = None
+                        
+                        # Încearcă să parseze răspunsul
+                        if "," in pairing_response:
+                            parts = pairing_response.split(",", 1)
+                            if len(parts) > 1:
+                                try:
+                                    parsed = json.loads(parts[1])
+                                    results["messages"].append({
+                                        "direction": "received",
+                                        "tag": parts[0],
+                                        "content": parsed
+                                    })
+                                    
+                                    # Verifică dacă răspunsul conține un pairing code
+                                    if "data" in parsed and "pairingCode" in parsed["data"]:
+                                        pairing_code = parsed["data"]["pairingCode"]
+                                    elif "result" in parsed and "pairingCode" in parsed["result"]:
+                                        pairing_code = parsed["result"]["pairingCode"]
+                                    elif "pairingCode" in parsed:
+                                        pairing_code = parsed["pairingCode"]
+                                except json.JSONDecodeError:
+                                    logger.warning("Nu s-a putut parsa răspunsul JSON pentru pairing code")
+                        
+                        # Dacă nu s-a găsit pairing code-ul, încearcă cu regex
+                        if not pairing_code and "pairingCode" in pairing_response:
+                            import re
+                            match = re.search(r'"pairingCode"\s*:\s*"([^"]+)"', pairing_response)
+                            if match:
+                                pairing_code = match.group(1)
+                        
+                        if pairing_code:
+                            results["pairing_code"] = True
+                            logger.info(f"Pairing code primit: {pairing_code}")
+                            results["messages"].append({
+                                "pairing_code": pairing_code
+                            })
+                        else:
+                            logger.warning("Nu s-a putut extrage pairing code-ul din răspuns")
+                            results["errors"].append("Nu s-a găsit pairing code în răspuns")
+                            
+                    except Exception as e:
+                        logger.error(f"Eroare la procesarea răspunsului pairing code: {str(e)}")
+                        results["errors"].append(f"Eroare la procesarea răspunsului pairing code: {str(e)}")
+                        
+                except asyncio.TimeoutError:
+                    logger.warning("Timeout la așteptarea răspunsului pentru pairing code")
+                    results["errors"].append("Timeout la așteptarea răspunsului pentru pairing code")
+                
+            # Încheie testul cu un mesaj de disconnect
+            message_tag = f"disconnect--{int(time.time())}"
+            
+            disconnect = {
+                "tag": message_tag,
+                "type": "disconnect",
+                "reason": "USER_INITIATED",
+                "timestamp": int(time.time())
+            }
+            
+            disconnect_json = json.dumps(disconnect)
+            logger.debug(f"Trimitere disconnect: {disconnect_json}")
+            await websocket.send(disconnect_json)
+            
+    except websockets.exceptions.WebSocketException as e:
+        logger.error(f"Eroare WebSocket: {str(e)}")
+        results["errors"].append(f"Eroare WebSocket: {str(e)}")
+    except ConnectionError as e:
+        logger.error(f"Eroare de conexiune: {str(e)}")
+        results["errors"].append(f"Eroare de conexiune: {str(e)}")
+    except Exception as e:
+        logger.error(f"Eroare neașteptată: {str(e)}")
+        results["errors"].append(f"Eroare neașteptată: {str(e)}")
+    
+    return results
+
+# Implementare class WhatsAppServerTester
 class WhatsAppServerTester:
     """
     Tester pentru conectarea și comunicarea cu serverele WhatsApp.
@@ -400,6 +670,15 @@ async def run_tests(phone_number: Optional[str] = None):
         print("\n" + report)
         
         logger.info("Teste complete. Raportul a fost salvat în whatsapp_test_report.txt")
+        
+        # Pentru completitudine, rulează și funcția test_server_connection
+        results = await test_server_connection(phone_number)
+        
+        # Salvează rezultatele în format JSON
+        with open("whatsapp_connection_test_results.json", "w") as f:
+            json.dump(results, f, indent=2)
+            
+        logger.info("Rezultatele testului de conexiune au fost salvate în whatsapp_connection_test_results.json")
         
     except Exception as e:
         logger.error(f"Eroare în timpul testelor: {str(e)}")

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bocksup - Debugging and Testing</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .card {
+            margin-bottom: 1.5rem;
+        }
+        pre {
+            background-color: #222;
+            color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            max-height: 400px;
+            overflow: auto;
+        }
+        .result-panel {
+            max-height: 500px;
+            overflow: auto;
+        }
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(108, 117, 125, 0.25);
+            border-right-color: #6c757d;
+            border-radius: 50%;
+            animation: spinner 0.75s linear infinite;
+        }
+        @keyframes spinner {
+            to {transform: rotate(360deg);}
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <header class="pb-3 mb-4 border-bottom">
+            <div class="d-flex align-items-center">
+                <img src="https://via.placeholder.com/50" alt="Bocksup Logo" class="me-3">
+                <div>
+                    <h2 class="fw-bold">Bocksup</h2>
+                    <p class="text-muted mb-0">WhatsApp Integration Library</p>
+                </div>
+            </div>
+            <div class="mt-3">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs">Documentation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/examples">Examples</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/debug">Debug</a>
+                    </li>
+                </ul>
+            </div>
+        </header>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info" role="alert">
+                    <h4 class="alert-heading">Debugging and Testing Tools</h4>
+                    <p>This page contains tools to test Bocksup's functionality and debug connections with WhatsApp servers.</p>
+                    <hr>
+                    <p class="mb-0">Use these tools to verify the library's connection capabilities, request pairing codes, and analyze protocol messages.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Library Information -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Library Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="library-info-result">
+                            <div class="d-flex justify-content-center py-4">
+                                <div class="spinner-border text-secondary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Test -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Connection Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Test the connection to WhatsApp servers. If you provide a phone number, it will also test the pairing code request functionality.</p>
+                        <form id="connection-test-form">
+                            <div class="mb-3">
+                                <label for="phone-number" class="form-label">Phone Number (optional)</label>
+                                <input type="text" class="form-control" id="phone-number" placeholder="e.g., 12025550108">
+                                <div class="form-text">Enter your phone number in international format without any symbols (e.g., 12025550108 for US).</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="test-connection-btn">
+                                Test Connection
+                                <span class="loading ms-2 d-none" id="connection-loading"></span>
+                            </button>
+                        </form>
+                        <div class="mt-3 result-panel d-none" id="connection-result-panel">
+                            <h6>Test Results</h6>
+                            <pre id="connection-results" class="small"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <!-- Pairing Code Request -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Request Pairing Code</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Request a pairing code from WhatsApp servers. The code will be displayed on your phone.</p>
+                        <form id="pairing-code-form">
+                            <div class="mb-3">
+                                <label for="pairing-phone-number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="pairing-phone-number" placeholder="e.g., 12025550108" required>
+                                <div class="form-text">Enter your phone number in international format without any symbols.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="request-pairing-code-btn">
+                                Request Pairing Code
+                                <span class="loading ms-2 d-none" id="pairing-loading"></span>
+                            </button>
+                        </form>
+                        <div class="mt-3 result-panel d-none" id="pairing-result-panel">
+                            <div id="pairing-results"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Protocol Analyzer -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Protocol Analyzer</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Upload a WhatsApp protocol log file to analyze it for debugging purposes.</p>
+                        <form id="protocol-analyzer-form" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="protocol-file" class="form-label">Protocol Log File</label>
+                                <input type="file" class="form-control" id="protocol-file" accept=".json,.txt,.har,.log">
+                                <div class="form-text">Upload a log file from WhatsApp Web traffic (JSON, HAR, or text format).</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="analyze-protocol-btn">
+                                Analyze Protocol
+                                <span class="loading ms-2 d-none" id="protocol-loading"></span>
+                            </button>
+                        </form>
+                        <div class="mt-3 result-panel d-none" id="protocol-result-panel">
+                            <h6>Analysis Results</h6>
+                            <pre id="protocol-results" class="small"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-3 my-4">
+        <div class="container">
+            <p class="text-center text-muted">
+                Bocksup - WhatsApp Integration Library &copy; 2025
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load library information
+            fetch('/api/library_info')
+                .then(response => response.json())
+                .then(data => {
+                    const infoElement = document.getElementById('library-info-result');
+                    if (data.status === 'available') {
+                        let featuresList = '';
+                        for (const [feature, available] of Object.entries(data.features)) {
+                            featuresList += `<li>${feature}: <span class="badge ${available ? 'bg-success' : 'bg-danger'}">${available ? 'Available' : 'Not Available'}</span></li>`;
+                        }
+                        
+                        infoElement.innerHTML = `
+                            <div class="card-text">
+                                <p><strong>Version:</strong> ${data.version}</p>
+                                <p><strong>Features:</strong></p>
+                                <ul>${featuresList}</ul>
+                                <p><small class="text-muted">The library is ready for testing.</small></p>
+                            </div>
+                        `;
+                    } else {
+                        infoElement.innerHTML = `
+                            <div class="alert alert-danger" role="alert">
+                                <h5>Library Not Available</h5>
+                                <p>${data.error}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('library-info-result').innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <h5>Error Loading Library Information</h5>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                });
+
+            // Connection Test Form
+            document.getElementById('connection-test-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const phoneNumber = document.getElementById('phone-number').value.trim();
+                const loadingIndicator = document.getElementById('connection-loading');
+                const resultPanel = document.getElementById('connection-result-panel');
+                const resultsElement = document.getElementById('connection-results');
+                const testButton = document.getElementById('test-connection-btn');
+                
+                loadingIndicator.classList.remove('d-none');
+                testButton.disabled = true;
+                resultPanel.classList.add('d-none');
+                
+                fetch('/api/test_connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        phone_number: phoneNumber || null
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.classList.add('d-none');
+                    testButton.disabled = false;
+                    resultPanel.classList.remove('d-none');
+                    
+                    if (data.status === 'success') {
+                        resultsElement.textContent = JSON.stringify(data.results, null, 2);
+                    } else {
+                        resultsElement.textContent = `Error: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.classList.add('d-none');
+                    testButton.disabled = false;
+                    resultPanel.classList.remove('d-none');
+                    resultsElement.textContent = `Request failed: ${error.message}`;
+                });
+            });
+
+            // Pairing Code Form
+            document.getElementById('pairing-code-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const phoneNumber = document.getElementById('pairing-phone-number').value.trim();
+                const loadingIndicator = document.getElementById('pairing-loading');
+                const resultPanel = document.getElementById('pairing-result-panel');
+                const resultsElement = document.getElementById('pairing-results');
+                const requestButton = document.getElementById('request-pairing-code-btn');
+                
+                if (!phoneNumber) {
+                    alert('Please enter a phone number');
+                    return;
+                }
+                
+                loadingIndicator.classList.remove('d-none');
+                requestButton.disabled = true;
+                resultPanel.classList.add('d-none');
+                
+                fetch('/api/request_pairing_code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        phone_number: phoneNumber
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.classList.add('d-none');
+                    requestButton.disabled = false;
+                    resultPanel.classList.remove('d-none');
+                    
+                    if (data.status === 'success') {
+                        resultsElement.innerHTML = `
+                            <div class="alert alert-success" role="alert">
+                                <h5>Success!</h5>
+                                <p>${data.pairing_code}</p>
+                                <p><small>Check your WhatsApp mobile app for the pairing code. You may need to approve the connection.</small></p>
+                            </div>
+                        `;
+                    } else {
+                        resultsElement.innerHTML = `
+                            <div class="alert alert-danger" role="alert">
+                                <h5>Error</h5>
+                                <p>${data.error}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.classList.add('d-none');
+                    requestButton.disabled = false;
+                    resultPanel.classList.remove('d-none');
+                    resultsElement.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <h5>Request Failed</h5>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                });
+            });
+
+            // Protocol Analyzer Form
+            document.getElementById('protocol-analyzer-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('protocol-file');
+                const loadingIndicator = document.getElementById('protocol-loading');
+                const resultPanel = document.getElementById('protocol-result-panel');
+                const resultsElement = document.getElementById('protocol-results');
+                const analyzeButton = document.getElementById('analyze-protocol-btn');
+                
+                if (!fileInput.files.length) {
+                    alert('Please select a file to analyze');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                
+                loadingIndicator.classList.remove('d-none');
+                analyzeButton.disabled = true;
+                resultPanel.classList.add('d-none');
+                
+                fetch('/api/analyze_protocol', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.classList.add('d-none');
+                    analyzeButton.disabled = false;
+                    resultPanel.classList.remove('d-none');
+                    
+                    if (data.status === 'success') {
+                        resultsElement.textContent = data.report;
+                    } else {
+                        resultsElement.textContent = `Error analyzing protocol: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.classList.add('d-none');
+                    analyzeButton.disabled = false;
+                    resultPanel.classList.remove('d-none');
+                    resultsElement.textContent = `Request failed: ${error.message}`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

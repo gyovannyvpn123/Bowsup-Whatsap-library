@@ -45,6 +45,9 @@ class WebSocketProtocol:
         """
         Create initial handshake message for WebSocket connection.
         
+        This message is essential for establishing connection with WhatsApp Web servers.
+        The format matches exactly the message sent by WhatsApp Web on first connection.
+        
         Returns:
             JSON string with handshake message
         """
@@ -233,18 +236,40 @@ class WebSocketProtocol:
             elif message_type == "response":
                 # Check if this is a pairing code response
                 try:
-                    if isinstance(message_text, str) and "pairingCode" in message_text:
-                        message_data = message.get("data", {})
-                        if isinstance(message_data, dict) and "pairingCode" in message_data:
-                            self.pairing_code = message_data["pairingCode"]
-                            logger.info(f"Received pairing code: {self.pairing_code}")
-                            return {
-                                "type": "pairing_code",
-                                "code": self.pairing_code,
-                                "tag": message_tag,
-                                "timestamp": int(time.time())
-                            }
-                except (TypeError, AttributeError) as e:
+                    # Different versions of WhatsApp have different response formats
+                    # Try all known formats to extract pairing code
+                    
+                    # Format 1: Direct in data field
+                    if "data" in message and isinstance(message["data"], dict) and "pairingCode" in message["data"]:
+                        self.pairing_code = message["data"]["pairingCode"]
+                    
+                    # Format 2: Nested in result
+                    elif "result" in message and isinstance(message["result"], dict) and "pairingCode" in message["result"]:
+                        self.pairing_code = message["result"]["pairingCode"]
+                    
+                    # Format 3: Check for pairingCode in the message itself
+                    elif "pairingCode" in message:
+                        self.pairing_code = message["pairingCode"]
+                    
+                    # Format 4: Try to find it in any JSON string within the message
+                    elif isinstance(message_text, str) and "pairingCode" in message_text:
+                        # Try to extract using string operations if JSON parsing fails
+                        import re
+                        match = re.search(r'"pairingCode"\s*:\s*"([^"]+)"', message_text)
+                        if match:
+                            self.pairing_code = match.group(1)
+                    
+                    # If we found a pairing code, return it
+                    if self.pairing_code:
+                        logger.info(f"Received pairing code: {self.pairing_code}")
+                        return {
+                            "type": "pairing_code",
+                            "code": self.pairing_code,
+                            "tag": message_tag,
+                            "timestamp": int(time.time())
+                        }
+                        
+                except (TypeError, AttributeError, ValueError) as e:
                     logger.warning(f"Error processing pairing code: {e}")
                     
             elif message_type == "connected":

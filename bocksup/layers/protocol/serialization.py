@@ -18,6 +18,151 @@ from bocksup.common.utils import to_bytes, from_bytes
 
 logger = logging.getLogger(__name__)
 
+class Serializer:
+    """
+    Main serializer class for WhatsApp protocol messages.
+    
+    This class provides a unified interface for serializing and deserializing
+    messages in the WhatsApp protocol, supporting both binary and text-based
+    formats used for different types of messages.
+    """
+    
+    def __init__(self, use_encryption: bool = True, use_compression: bool = True):
+        """
+        Initialize the serializer.
+        
+        Args:
+            use_encryption: Whether to encrypt messages by default
+            use_compression: Whether to compress messages by default
+        """
+        self.use_encryption = use_encryption
+        self.use_compression = use_compression
+        self.binary_encoder = BinaryEncoder()
+        self.binary_decoder = BinaryDecoder()
+        self.ws_serializer = WebSocketMessageSerializer()
+        
+    def serialize_message(self, message: Dict[str, Any]) -> bytes:
+        """
+        Serialize a message dictionary to binary format.
+        
+        Args:
+            message: Message dictionary to serialize
+            
+        Returns:
+            Serialized binary message
+        """
+        return BinaryEncoder.encode_message(
+            message, 
+            encrypt=self.use_encryption,
+            compress=self.use_compression
+        )
+        
+    def deserialize_message(self, data: Union[bytes, str]) -> Dict[str, Any]:
+        """
+        Deserialize a binary or text message.
+        
+        Args:
+            data: Binary or text message data
+            
+        Returns:
+            Deserialized message dictionary
+            
+        Raises:
+            ParseError: If the message cannot be deserialized
+        """
+        return self.ws_serializer.deserialize_message(data)
+        
+    def serialize_handshake(self, client_id: str, client_version: str) -> str:
+        """
+        Create a handshake message for establishing connection.
+        
+        Args:
+            client_id: Client identifier
+            client_version: Client version string
+            
+        Returns:
+            Serialized handshake message
+        """
+        return self.ws_serializer.serialize_handshake(client_id, client_version)
+        
+    def serialize_text_message(self, 
+                              message: str, 
+                              recipient: str, 
+                              message_id: Optional[str] = None) -> bytes:
+        """
+        Serialize a text message for sending.
+        
+        Args:
+            message: Text message content
+            recipient: Recipient's JID
+            message_id: Optional message ID
+            
+        Returns:
+            Serialized binary message
+        """
+        msg_dict = self.ws_serializer.serialize_text_message(message, recipient, message_id)
+        return self.serialize_message(msg_dict)
+        
+    def serialize_ack(self, 
+                     message_id: str, 
+                     recipient: str, 
+                     ack_type: str) -> bytes:
+        """
+        Serialize an acknowledgment message.
+        
+        Args:
+            message_id: Message ID being acknowledged
+            recipient: Recipient's JID
+            ack_type: Type of acknowledgment
+            
+        Returns:
+            Serialized binary message
+        """
+        msg_dict = self.ws_serializer.serialize_ack(message_id, recipient, ack_type)
+        return self.serialize_message(msg_dict)
+        
+    def serialize_presence(self, 
+                          presence_type: str, 
+                          to: Optional[str] = None) -> bytes:
+        """
+        Serialize a presence update message.
+        
+        Args:
+            presence_type: Type of presence update
+            to: Optional recipient JID
+            
+        Returns:
+            Serialized binary message
+        """
+        msg_dict = self.ws_serializer.serialize_presence(presence_type, to)
+        return self.serialize_message(msg_dict)
+        
+    def serialize_pairing_code_request(self, 
+                                     phone_number: str, 
+                                     device_id: str) -> str:
+        """
+        Create a request for a pairing code.
+        
+        Args:
+            phone_number: Phone number in international format
+            device_id: Unique device identifier
+            
+        Returns:
+            Serialized pairing code request
+        """
+        pairing_request = {
+            "messageTag": f"pairing_{int(time.time())}",
+            "type": "admin",
+            "command": "request_code",
+            "method": "sms",
+            "phone": phone_number,
+            "device": device_id,
+            "mcc": "000",
+            "mnc": "000"
+        }
+        
+        return json.dumps(pairing_request)
+
 # Protocol constants
 WA_MESSAGE_HEADER_SIZE = 3
 WA_MESSAGE_FLAG_COMPRESSED = 0x02

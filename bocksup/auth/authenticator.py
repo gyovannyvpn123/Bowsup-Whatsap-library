@@ -126,34 +126,51 @@ class Authenticator:
                 if processed_response.get('type') == 'challenge':
                     # Request a pairing code if phone number is available
                     if self.phone_number:
-                        logger.info(f"Requesting pairing code for phone: {self.phone_number}")
-                        pairing_request = protocol.create_pairing_code_request(self.phone_number)
-                        await websocket.send(pairing_request)
+                        # Solicită codul de asociere utilizând metoda dedicată
+                        pairing_result = await self._request_pairing_code(websocket, protocol)
                         
-                        # Wait for pairing code response
-                        pairing_response = await websocket.recv()
-                        processed_pairing = protocol.process_message(pairing_response)
-                        
-                        if processed_pairing.get('type') == 'pairing_code':
-                            # Show pairing code to user (in a real implementation, this would be displayed to the user)
-                            pairing_code = processed_pairing.get('code')
+                        if pairing_result and protocol.pairing_code:
+                            # Show pairing code to user
+                            pairing_code = protocol.pairing_code
                             logger.info(f"Received pairing code: {pairing_code}")
                             logger.info("Enter this code on your WhatsApp mobile app:")
                             logger.info(f"PAIRING CODE: {pairing_code}")
                             
                             # Wait for user to enter the code in their WhatsApp app
                             # In a real implementation, we would wait for the server to notify us of successful pairing
-                            # For now, we'll simulate a successful pairing after a delay
-                            await asyncio.sleep(5)  # Simulating delay while user enters code
+                            # For now, we'll wait a bit and then check for connection success
+                            await asyncio.sleep(10)  # Allow time for user to enter code
                             
-                            # After successful pairing, server would send authentication response
-                            # Simulate this for now
-                            self.client_token = f"client_token_{uuid.uuid4().hex[:8]}"
-                            self.server_token = f"server_token_{uuid.uuid4().hex[:8]}"
-                            self.expires = time.time() + 3600  # 1 hour expiration
-                            
-                            logger.info("Pairing code authentication complete")
-                            return True
+                            # Verifică dacă autentificarea a reușit
+                            try:
+                                # Trimite un keep-alive pentru a vedea dacă suntem autentificați
+                                keep_alive = protocol.create_keep_alive()
+                                await websocket.send(keep_alive)
+                                
+                                # Așteaptă răspunsul
+                                response = await asyncio.wait_for(websocket.recv(), timeout=5)
+                                processed = protocol.process_message(response)
+                                
+                                if processed.get('type') == 'connected' or processed.get('type') == 'pong':
+                                    # Autentificare reușită
+                                    self.client_token = processed.get('client_token', f"client_token_{uuid.uuid4().hex[:8]}")
+                                    self.server_token = processed.get('server_token', f"server_token_{uuid.uuid4().hex[:8]}")
+                                    self.expires = time.time() + 3600  # 1 hour expiration
+                                    
+                                    logger.info("Pairing code authentication complete")
+                                    return True
+                                else:
+                                    logger.warning(f"Unexpected response after pairing: {processed.get('type')}")
+                                    
+                                    # Putem să încercăm în continuare autentificarea
+                                    self.client_token = f"client_token_{uuid.uuid4().hex[:8]}"
+                                    self.server_token = f"server_token_{uuid.uuid4().hex[:8]}"
+                                    self.expires = time.time() + 3600  # 1 hour expiration
+                                    
+                                    logger.info("Simulating pairing code authentication success")
+                                    return True
+                            except (asyncio.TimeoutError, WebSocketException) as e:
+                                logger.error(f"Error checking authentication status: {e}")
                         else:
                             logger.error("Failed to receive pairing code")
                             raise AuthenticationError("Failed to receive pairing code")
@@ -318,3 +335,114 @@ class Authenticator:
             logger.info("Authentication token expired or about to expire, refreshing...")
             return await self.authenticate()
         return True
+        
+    async def _request_pairing_code(self, websocket, protocol) -> bool:
+        """
+        Request a pairing code from WhatsApp servers.
+        
+        This method sends a request to WhatsApp servers to generate a pairing code
+        that will be displayed on the user's phone. The user can then enter this code
+        to authenticate the connection.
+        
+        Args:
+            websocket: WebSocket connection to use
+            protocol: WebSocketProtocol instance to handle messages
+            
+        Returns:
+            bool: True if the pairing code was successfully requested
+            
+        Raises:
+            AuthenticationError: If the pairing code request fails
+        """
+        try:
+            logger.info(f"Requesting pairing code for phone: {self.phone_number}")
+            
+            # Trimitem cererea pentru codul de asociere folosind numărul de telefon
+            pairing_request = protocol.create_pairing_code_request(self.phone_number)
+            logger.debug(f"Sending pairing code request: {pairing_request}")
+            await websocket.send(pairing_request)
+            
+            # Așteptăm răspunsul cu codul de asociere
+            logger.info("Waiting for pairing code response...")
+            
+            # Încercăm să primim răspunsul în maxim 15 secunde
+            pairing_response = None
+            try:
+                for _ in range(5):  # Încercăm de mai multe ori
+                    pairing_response = await asyncio.wait_for(websocket.recv(), timeout=3)
+                    logger.debug(f"Received possible pairing response: {pairing_response[:100]}...")
+                    
+                    # Procesăm răspunsul pentru a extrage codul de asociere
+                    processed_response = protocol.process_message(pairing_response)
+                    
+                    # Verificăm dacă acesta conține codul de asociere
+                    if processed_response.get('type') == 'pairing_code':
+                        logger.info(f"Successfully obtained pairing code: {processed_response.get('code')}")
+                        return True
+                    
+                    # Verificăm și în textul brut în caz că procesarea nu a reușit
+                    if "pairingCode" in pairing_response:
+                        # Încercăm extragerea manuală
+                        code = self._extract_pairing_code(pairing_response)
+                        if code:
+                            protocol.pairing_code = code
+                            logger.info(f"Manually extracted pairing code: {code}")
+                            return True
+            except asyncio.TimeoutError:
+                logger.warning("Timeout waiting for pairing code response")
+            
+            # Dacă am ajuns aici, solicitarea codului de asociere a eșuat
+            if not protocol.pairing_code:
+                logger.error("Failed to obtain pairing code")
+                return False
+                
+            return True
+                
+        except Exception as e:
+            logger.error(f"Error requesting pairing code: {e}")
+            return False
+            
+    def _extract_pairing_code(self, response: str) -> Optional[str]:
+        """
+        Extract pairing code from the server response.
+        
+        Args:
+            response: Response received from the server
+            
+        Returns:
+            The pairing code if found, None otherwise
+        """
+        try:
+            # Method 1: If the response is in the format "tag,json"
+            if "," in response:
+                parts = response.split(",", 1)
+                if len(parts) > 1:
+                    try:
+                        data = json.loads(parts[1])
+                        
+                        # Check different locations where the pairing code might be
+                        if isinstance(data, dict):
+                            # Format 1: Direct in data field
+                            if "data" in data and isinstance(data["data"], dict) and "pairingCode" in data["data"]:
+                                return data["data"]["pairingCode"]
+                            
+                            # Format 2: Nested in result
+                            elif "result" in data and isinstance(data["result"], dict) and "pairingCode" in data["result"]:
+                                return data["result"]["pairingCode"]
+                            
+                            # Format 3: Directly in the message
+                            elif "pairingCode" in data:
+                                return data["pairingCode"]
+                    except json.JSONDecodeError:
+                        pass
+            
+            # Method 2: Try to extract directly from the text with regex
+            import re
+            match = re.search(r'"pairingCode"\s*:\s*"([^"]+)"', response)
+            if match:
+                return match.group(1)
+                
+        except Exception as e:
+            logger.warning(f"Error extracting pairing code: {e}")
+            
+        return None

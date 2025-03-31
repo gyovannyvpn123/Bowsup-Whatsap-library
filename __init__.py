@@ -1124,13 +1124,23 @@ def create_client(phone_number: str, password: Optional[str] = None) -> Messagin
 # Test connection function
 async def test_server_connection(phone_number: Optional[str] = None) -> Dict:
     """
-    Test connection to WhatsApp servers.
+    Testează conexiunea la serverele WhatsApp.
+    
+    Această funcție încearcă să stabilească o conexiune cu serverele WhatsApp
+    și să execute un handshake inițial. Dacă este furnizat un număr de telefon,
+    va încerca și solicitarea unui pairing code.
     
     Args:
-        phone_number: Optional phone number for testing with pairing code
+        phone_number: Opțional, numărul de telefon pentru testarea pairing code-ului
         
     Returns:
-        Dict with test results
+        Dict conținând rezultatele testelor cu următoarele chei:
+        - connection: bool - dacă conexiunea a reușit
+        - handshake: bool - dacă handshake-ul inițial a reușit
+        - challenge: bool - dacă a fost primit un challenge de autentificare
+        - pairing_code: bool - dacă a fost solicitat un pairing code (doar cu număr de telefon)
+        - messages: list - mesajele schimbate cu serverul
+        - errors: list - erori întâlnite
     """
     logger.info("Testing connection to WhatsApp servers")
     
