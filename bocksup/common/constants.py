@@ -3,21 +3,45 @@ Constants used throughout the Bocksup library.
 """
 
 # Server information
-WHATSAPP_SERVER = 'e1.whatsapp.net'
+WHATSAPP_SERVER = 'web.whatsapp.com'
 WHATSAPP_PORT = 443
-WHATSAPP_WEBSOCKET_URL = 'wss://web.whatsapp.com/ws'
+WHATSAPP_WEBSOCKET_URL = 'wss://web.whatsapp.com/ws/chat'
+WHATSAPP_WEBSOCKET_ORIGIN = 'https://web.whatsapp.com'
 
 # Media server
-WHATSAPP_MEDIA_SERVER = 'media.whatsapp.net'
+WHATSAPP_MEDIA_SERVER = 'mmg.whatsapp.net'
+WHATSAPP_MEDIA_UPLOAD_SERVER = 'upload.whatsapp.net'
+WHATSAPP_MEDIA_DOWNLOAD_SERVER = 'cdn.whatsapp.net'
 
 # Protocol details
-PROTOCOL_VERSION = '0.4.2412'
-USER_AGENT = f'WhatsApp/2.24.12 Bocksup/{PROTOCOL_VERSION}'
+PROTOCOL_VERSION = '2.2412.54'
+CLIENT_VERSION = '2.2412.54'
+USER_AGENT = f'WhatsApp/{CLIENT_VERSION} Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+WA_SECRET_BUNDLE = 'BD3YXSsQmIiuQ/QQPVXnKQ=='  # This is a placeholder, in real implementation this should come from configuration
 
 # Connection parameters
-CONNECT_TIMEOUT = 10  # seconds
-READ_TIMEOUT = 30  # seconds
-PING_INTERVAL = 60  # seconds
+CONNECT_TIMEOUT = 20  # seconds
+READ_TIMEOUT = 45  # seconds
+PING_INTERVAL = 25  # seconds
+MAX_RETRIES = 5
+RETRY_DELAY = 3  # seconds
+
+# WebSocket frame related
+WS_NORMAL_CLOSURE = 1000
+WS_GOING_AWAY = 1001
+WS_NO_STATUS_RCVD = 1005
+
+# Protocol message tags
+TAG_MESSAGE = 'message'
+TAG_RECEIPT = 'receipt'
+TAG_PRESENCE = 'presence'
+TAG_GROUP = 'group'
+TAG_NOTIFICATION = 'notification'
+TAG_CALL = 'call'
+TAG_CHAT = 'chat'
+TAG_RESPONSE = 'response'
+TAG_ERROR = 'error'
+TAG_STREAM = 'stream'
 
 # Message types
 MESSAGE_TYPE_TEXT = 1

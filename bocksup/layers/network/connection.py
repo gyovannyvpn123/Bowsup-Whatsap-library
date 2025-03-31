@@ -107,9 +107,17 @@ class Connection(Layer):
         """
         try:
             # Prepare connection headers
+            from bocksup.common.constants import USER_AGENT, WHATSAPP_WEBSOCKET_URL, WHATSAPP_WEBSOCKET_ORIGIN
+            
             headers = {
-                'User-Agent': 'Bocksup/0.1.0',
-                'Origin': 'https://web.whatsapp.com'
+                'User-Agent': USER_AGENT,
+                'Origin': WHATSAPP_WEBSOCKET_ORIGIN,
+                'Sec-WebSocket-Protocol': 'chat',
+                'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache'
             }
             headers.update(self._custom_headers)
             
@@ -120,7 +128,9 @@ class Connection(Layer):
                     extra_headers=headers,
                     ping_interval=None,  # We'll handle pings manually
                     ping_timeout=None,
-                    close_timeout=5
+                    close_timeout=10,
+                    max_size=None,  # No limit on message size
+                    compression=None  # We'll handle compression manually
                 ),
                 timeout=self.connect_timeout
             )
