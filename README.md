@@ -15,12 +15,15 @@ Biblioteca este în faza de dezvoltare activă și încă nu este complet funcț
 - ✅ Suport pentru autentificare prin pairing code și WebSocket
 - ✅ Module pentru serializarea și parsarea mesajelor
 - ✅ Client pentru înregistrarea numerelor noi
+- ✅ Implementarea protocolului Signal pentru criptare end-to-end
+- ✅ Modul pentru testare și integrare cu serverele WhatsApp reale
 
-### În curs de implementare:
+### Ghiduri pentru implementare completă:
 
-- ❌ Implementarea completă a gestionării QR code-ului
-- ❌ Implementarea completă și testarea mecanismului de criptare end-to-end
-- ❌ Testarea reală cu serverele WhatsApp
+Biblioteca include documentație detaliată despre cum să se facă pe deplin funcțională cu serverele WhatsApp reale:
+
+- [Ghid de implementare funcțională](bocksup/docs/implementare_functionala.md) - Pași pentru a face biblioteca complet funcțională
+- [Troubleshooting](bocksup/docs/troubleshooting.md) - Diagnosticarea și rezolvarea problemelor comune
 
 ## Instalare
 

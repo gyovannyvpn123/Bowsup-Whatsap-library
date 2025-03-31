@@ -1,298 +1,181 @@
 """
-Cryptographic utilities for WhatsApp protocol.
+Module for AES encryption and decryption.
+
+This module provides AES-based encryption and decryption utilities
+used by the library for securing messages and other data.
 """
 
-import logging
 import os
 import base64
 import hashlib
-import hmac
-import time
-from typing import Tuple, Dict, Any, Optional, Union, List
+from typing import Union, Optional, Tuple, Dict, Any
 
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
-from bocksup.common.exceptions import EncryptionError
-
-logger = logging.getLogger(__name__)
-
-class Crypto:
+class AESCipher:
     """
-    Cryptographic utilities for WhatsApp protocol.
+    AES cipher implementation for encryption and decryption.
     
-    This class provides cryptographic functions used by the WhatsApp protocol,
-    including encryption, decryption, and various hashing operations.
+    This class provides methods for AES-CBC encryption and decryption
+    with automatic padding and IV handling.
     """
     
-    @staticmethod
-    def encrypt_aes(data: Union[str, bytes], key: Union[str, bytes], iv: Optional[bytes] = None) -> bytes:
+    def __init__(self, key: Optional[bytes] = None, block_size: int = AES.block_size):
         """
-        Encrypt data using AES-256-CBC.
+        Initialize the AES cipher.
         
         Args:
-            data: Data to encrypt
-            key: Encryption key
-            iv: Initialization vector (if None, a random one is generated)
+            key: Encryption key (if None, a random key will be generated)
+            block_size: AES block size in bytes (default is 16)
+        """
+        self.key = key if key is not None else os.urandom(32)  # 256-bit key
+        self.block_size = block_size
+        
+    def encrypt(self, data: Union[str, bytes]) -> Dict[str, str]:
+        """
+        Encrypt data using AES-CBC with random IV.
+        
+        Args:
+            data: Data to encrypt (string or bytes)
             
         Returns:
-            Encrypted data with IV prepended
+            Dictionary containing base64-encoded 'iv' and 'ciphertext'
+        """
+        # Convert string to bytes if necessary
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+            
+        # Generate a random IV
+        iv = os.urandom(self.block_size)
+        
+        # Create AES cipher
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        
+        # Pad and encrypt the data
+        padded_data = pad(data, self.block_size)
+        ciphertext = cipher.encrypt(padded_data)
+        
+        # Return base64 encoded IV and ciphertext
+        return {
+            'iv': base64.b64encode(iv).decode('utf-8'),
+            'ciphertext': base64.b64encode(ciphertext).decode('utf-8')
+        }
+        
+    def decrypt(self, iv: Union[str, bytes], ciphertext: Union[str, bytes]) -> bytes:
+        """
+        Decrypt AES-CBC encrypted data.
+        
+        Args:
+            iv: Initialization vector (base64 string or bytes)
+            ciphertext: Encrypted data (base64 string or bytes)
+            
+        Returns:
+            Decrypted data as bytes
             
         Raises:
-            EncryptionError: If encryption fails
+            ValueError: If decryption fails
         """
+        # Convert base64 strings to bytes if necessary
+        if isinstance(iv, str):
+            iv = base64.b64decode(iv)
+            
+        if isinstance(ciphertext, str):
+            ciphertext = base64.b64decode(ciphertext)
+            
+        # Create AES cipher
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        
+        # Decrypt and unpad the data
+        padded_data = cipher.decrypt(ciphertext)
+        
         try:
-            # Convert data and key to bytes if they're strings
-            if isinstance(data, str):
-                data = data.encode('utf-8')
-                
-            if isinstance(key, str):
-                key = key.encode('utf-8')
-                
-            # Ensure key is the right length for AES-256
-            if len(key) != 32:  # 256 bits = 32 bytes
-                key = hashlib.sha256(key).digest()
-                
-            # Generate random IV if none provided
-            if iv is None:
-                iv = os.urandom(AES.block_size)
-                
-            # Pad data to block size
-            padded_data = pad(data, AES.block_size)
+            return unpad(padded_data, self.block_size)
+        except ValueError as e:
+            raise ValueError(f"Decryption failed: {str(e)}")
             
-            # Create cipher and encrypt
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            encrypted = cipher.encrypt(padded_data)
-            
-            # Prepend IV to ciphertext
-            return iv + encrypted
-            
-        except Exception as e:
-            logger.error(f"AES encryption error: {str(e)}")
-            raise EncryptionError(f"AES encryption failed: {str(e)}")
-    
-    @staticmethod
-    def decrypt_aes(data: bytes, key: Union[str, bytes]) -> bytes:
+    def encrypt_file(self, input_file: str, output_file: str) -> Dict[str, str]:
         """
-        Decrypt AES-256-CBC encrypted data.
+        Encrypt a file using AES-CBC.
         
         Args:
-            data: Encrypted data with IV prepended
-            key: Decryption key
+            input_file: Path to the file to encrypt
+            output_file: Path to save the encrypted file
             
         Returns:
-            Decrypted data
-            
-        Raises:
-            EncryptionError: If decryption fails
+            Dictionary containing base64-encoded 'iv'
         """
-        try:
-            # Convert key to bytes if it's a string
-            if isinstance(key, str):
-                key = key.encode('utf-8')
+        # Read the input file
+        with open(input_file, 'rb') as f:
+            data = f.read()
+            
+        # Encrypt the data
+        encrypted = self.encrypt(data)
+        
+        # Write the IV and ciphertext to the output file
+        with open(output_file, 'wb') as f:
+            iv_bytes = base64.b64decode(encrypted['iv'])
+            ciphertext_bytes = base64.b64decode(encrypted['ciphertext'])
+            f.write(iv_bytes + ciphertext_bytes)
+            
+        return {'iv': encrypted['iv']}
+        
+    def decrypt_file(self, input_file: str, output_file: str, iv: Optional[Union[str, bytes]] = None) -> bool:
+        """
+        Decrypt a file encrypted with AES-CBC.
+        
+        Args:
+            input_file: Path to the encrypted file
+            output_file: Path to save the decrypted file
+            iv: Initialization vector (if None, it's assumed to be at the beginning of the file)
+            
+        Returns:
+            True if decryption was successful
+        """
+        # Read the encrypted file
+        with open(input_file, 'rb') as f:
+            data = f.read()
+            
+        # If IV is not provided, assume it's at the beginning of the file
+        if iv is None:
+            iv = data[:self.block_size]
+            ciphertext = data[self.block_size:]
+        else:
+            # Convert base64 string to bytes if necessary
+            if isinstance(iv, str):
+                iv = base64.b64decode(iv)
                 
-            # Ensure key is the right length for AES-256
-            if len(key) != 32:  # 256 bits = 32 bytes
-                key = hashlib.sha256(key).digest()
+            ciphertext = data
+            
+        # Decrypt the data
+        try:
+            decrypted = self.decrypt(iv, ciphertext)
+            
+            # Write the decrypted data to the output file
+            with open(output_file, 'wb') as f:
+                f.write(decrypted)
                 
-            # Extract IV from the beginning of the data
-            iv = data[:AES.block_size]
-            ciphertext = data[AES.block_size:]
+            return True
+        except ValueError:
+            return False
             
-            # Create cipher and decrypt
-            cipher = AES.new(key, AES.MODE_CBC, iv)
-            padded_plaintext = cipher.decrypt(ciphertext)
-            
-            # Unpad the plaintext
-            return unpad(padded_plaintext, AES.block_size)
-            
-        except Exception as e:
-            logger.error(f"AES decryption error: {str(e)}")
-            raise EncryptionError(f"AES decryption failed: {str(e)}")
-    
     @staticmethod
-    def hmac_sha256(key: Union[str, bytes], data: Union[str, bytes]) -> bytes:
+    def derive_key_from_password(password: str, salt: Optional[bytes] = None, iterations: int = 100000) -> Tuple[bytes, bytes]:
         """
-        Calculate HMAC-SHA256 digest.
-        
-        Args:
-            key: HMAC key
-            data: Data to hash
-            
-        Returns:
-            HMAC-SHA256 digest
-            
-        Raises:
-            EncryptionError: If HMAC calculation fails
-        """
-        try:
-            # Convert key and data to bytes if they're strings
-            if isinstance(key, str):
-                key = key.encode('utf-8')
-                
-            if isinstance(data, str):
-                data = data.encode('utf-8')
-                
-            # Calculate HMAC
-            h = hmac.new(key, data, hashlib.sha256)
-            return h.digest()
-            
-        except Exception as e:
-            logger.error(f"HMAC-SHA256 error: {str(e)}")
-            raise EncryptionError(f"HMAC-SHA256 failed: {str(e)}")
-    
-    @staticmethod
-    def sha256(data: Union[str, bytes]) -> bytes:
-        """
-        Calculate SHA-256 hash.
-        
-        Args:
-            data: Data to hash
-            
-        Returns:
-            SHA-256 hash
-            
-        Raises:
-            EncryptionError: If hashing fails
-        """
-        try:
-            # Convert data to bytes if it's a string
-            if isinstance(data, str):
-                data = data.encode('utf-8')
-                
-            # Calculate hash
-            h = hashlib.sha256(data)
-            return h.digest()
-            
-        except Exception as e:
-            logger.error(f"SHA-256 error: {str(e)}")
-            raise EncryptionError(f"SHA-256 failed: {str(e)}")
-    
-    @staticmethod
-    def base64_encode(data: Union[str, bytes]) -> str:
-        """
-        Encode data as base64.
-        
-        Args:
-            data: Data to encode
-            
-        Returns:
-            Base64-encoded string
-            
-        Raises:
-            EncryptionError: If encoding fails
-        """
-        try:
-            # Convert data to bytes if it's a string
-            if isinstance(data, str):
-                data = data.encode('utf-8')
-                
-            # Encode as base64
-            return base64.b64encode(data).decode('utf-8')
-            
-        except Exception as e:
-            logger.error(f"Base64 encoding error: {str(e)}")
-            raise EncryptionError(f"Base64 encoding failed: {str(e)}")
-    
-    @staticmethod
-    def base64_decode(data: str) -> bytes:
-        """
-        Decode base64 data.
-        
-        Args:
-            data: Base64-encoded string
-            
-        Returns:
-            Decoded bytes
-            
-        Raises:
-            EncryptionError: If decoding fails
-        """
-        try:
-            # Decode base64
-            return base64.b64decode(data)
-            
-        except Exception as e:
-            logger.error(f"Base64 decoding error: {str(e)}")
-            raise EncryptionError(f"Base64 decoding failed: {str(e)}")
-    
-    @staticmethod
-    def generate_random_bytes(length: int) -> bytes:
-        """
-        Generate cryptographically secure random bytes.
-        
-        Args:
-            length: Number of bytes to generate
-            
-        Returns:
-            Random bytes
-        """
-        return os.urandom(length)
-    
-    @staticmethod
-    def pkcs5_unpad(data: bytes) -> bytes:
-        """
-        Remove PKCS#5 padding from data.
-        
-        Args:
-            data: Padded data
-            
-        Returns:
-            Unpadded data
-            
-        Raises:
-            EncryptionError: If unpadding fails
-        """
-        try:
-            return unpad(data, AES.block_size)
-        except Exception as e:
-            logger.error(f"PKCS#5 unpadding error: {str(e)}")
-            raise EncryptionError(f"PKCS#5 unpadding failed: {str(e)}")
-    
-    @staticmethod
-    def pkcs5_pad(data: bytes) -> bytes:
-        """
-        Add PKCS#5 padding to data.
-        
-        Args:
-            data: Data to pad
-            
-        Returns:
-            Padded data
-            
-        Raises:
-            EncryptionError: If padding fails
-        """
-        try:
-            return pad(data, AES.block_size)
-        except Exception as e:
-            logger.error(f"PKCS#5 padding error: {str(e)}")
-            raise EncryptionError(f"PKCS#5 padding failed: {str(e)}")
-    
-    @staticmethod
-    def derive_key(password: str, salt: bytes, iterations: int = 2000) -> bytes:
-        """
-        Derive a key from a password using PBKDF2.
+        Derive an encryption key from a password using PBKDF2.
         
         Args:
             password: Password to derive key from
-            salt: Salt for key derivation
+            salt: Salt for key derivation (if None, a random salt will be generated)
             iterations: Number of iterations for PBKDF2
             
         Returns:
-            Derived key
-            
-        Raises:
-            EncryptionError: If key derivation fails
+            Tuple of (key, salt)
         """
-        try:
-            # Convert password to bytes if it's a string
-            if isinstance(password, str):
-                password = password.encode('utf-8')
-                
-            # Derive key using PBKDF2
-            return hashlib.pbkdf2_hmac('sha256', password, salt, iterations, dklen=32)
+        if salt is None:
+            salt = os.urandom(16)
             
-        except Exception as e:
-            logger.error(f"Key derivation error: {str(e)}")
-            raise EncryptionError(f"Key derivation failed: {str(e)}")
+        # Use hashlib's pbkdf2_hmac for key derivation
+        key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations, dklen=32)
+        
+        return key, salt

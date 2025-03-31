@@ -1,10 +1,11 @@
 """
-Encryption module for WhatsApp messages.
+Modul de criptare pentru Bocksup.
 
-This module handles encryption and decryption of WhatsApp messages,
-including implementation of the Signal Protocol (formerly Axolotl).
+Acest modul implementează criptarea end-to-end folosită de WhatsApp,
+bazată pe protocolul Signal (anterior cunoscut ca Axolotl).
 """
 
-from bocksup.encryption.crypto import Crypto
+from bocksup.encryption.crypto import AESCipher
+from bocksup.encryption.signal_protocol import SignalProtocol
 
-__all__ = ['Crypto']
+__all__ = ["AESCipher", "SignalProtocol"]
