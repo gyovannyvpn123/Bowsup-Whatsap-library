@@ -1,192 +1,108 @@
-#!/usr/bin/env python3
-"""
-Script pentru testarea conexiunii la serverele WhatsApp.
-
-Acest script folosește modulul bocksup pentru a testa conectarea la 
-serverele WhatsApp reale și captează detaliile răspunsurilor pentru
-dezvoltarea viitoare a bibliotecii.
-"""
-
 import asyncio
 import logging
 import json
-import argparse
-import os
-from typing import Optional
+import sys
+import time
 
-# Configurarea logging-ului
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('connection_test')
+# Configurare logging
+logging.basicConfig(level=logging.DEBUG, 
+                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("TestConnection")
 
-async def test_connection(phone_number: Optional[str] = None, capture: bool = True):
-    """
-    Testează conexiunea la serverele WhatsApp.
+async def test_whatsapp_connection():
+    """Testează conexiunea la serverele WhatsApp folosind funcțiile existente"""
     
-    Args:
-        phone_number: Număr de telefon pentru testarea codului de asociere (opțional)
-        capture: Dacă să salveze răspunsurile într-un fișier pentru analiză
-    """
+    print("\n=== Test Conexiune WhatsApp ===")
+    
     try:
-        # Importarea modulelor necesare
-        from bocksup import test_server_connection, WhatsAppConnection, __version__
+        # Importăm funcția corectă din modul
+        from bocksup.test_server_connection import test_server_connection
         
-        logger.info(f"Bocksup versiunea {__version__}")
-        logger.info("Începerea testelor de conexiune...")
+        # Testăm conexiunea de bază (fără număr de telefon)
+        print("\n[1] Testare conexiune de bază...")
         
-        # Testul principal
-        results = await test_server_connection(phone_number)
+        result_basic = await test_server_connection()
         
-        # Afișarea rezultatelor
-        logger.info("===== REZULTATE TEST CONEXIUNE =====")
-        logger.info(f"Conexiune: {'SUCCES' if results['connection'] else 'EȘEC'}")
-        logger.info(f"Handshake: {'SUCCES' if results['handshake'] else 'EȘEC'}")
+        print("\nRezultat test de bază:")
+        print(f"- Conexiune: {'✓' if result_basic.get('connection') else '✗'}")
+        print(f"- Handshake: {'✓' if result_basic.get('handshake') else '✗'}")
+        print(f"- Challenge: {'✓' if result_basic.get('challenge') else '✗'}")
         
-        if phone_number:
-            logger.info(f"Challenge primit: {'DA' if results['challenge'] else 'NU'}")
-            logger.info(f"Pairing code solicitat: {'DA' if results['pairing_code'] else 'NU'}")
+        if result_basic.get("errors"):
+            print("\nErori întâlnite:")
+            for error in result_basic.get("errors"):
+                print(f"  - {error}")
         
-        if 'errors' in results and results['errors']:
-            logger.warning("Erori întâlnite:")
-            for error in results['errors']:
-                logger.warning(f"- {error}")
-                
-        # Salvarea rezultatelor
-        if capture:
-            capture_file = "whatsapp_connection_test_results.json"
-            with open(capture_file, "w") as f:
-                json.dump(results, f, indent=2)
-            logger.info(f"Rezultatele au fost salvate în {capture_file}")
+        # Scrie rezultatele într-un fișier
+        with open("connection_test_results.json", "w") as f:
+            json.dump(result_basic, f, indent=2, default=str)
+        
+        print("\nRezultatele detaliate au fost salvate în connection_test_results.json")
+        
+        # Dacă testul de bază a reușit, încercăm și testul cu pairing code
+        if result_basic.get("connection") and result_basic.get("handshake"):
+            phone_number = "40756469325"  # Numărul tău de telefon
             
-        return results
+            print(f"\n[2] Testare cod de asociere pentru {phone_number}...")
+            print("(Acest test poate dura până la 10 secunde)")
+            
+            result_pairing = await test_server_connection(phone_number)
+            
+            print("\nRezultat test pairing code:")
+            print(f"- Conexiune: {'✓' if result_pairing.get('connection') else '✗'}")
+            print(f"- Handshake: {'✓' if result_pairing.get('handshake') else '✗'}")
+            print(f"- Pairing Code: {'✓' if result_pairing.get('pairing_code') else '✗'}")
+            
+            if result_pairing.get("errors"):
+                print("\nErori întâlnite:")
+                for error in result_pairing.get("errors"):
+                    print(f"  - {error}")
+            
+            # Căutăm pairing code-ul în mesaje
+            pairing_code = None
+            if "messages" in result_pairing:
+                for msg in result_pairing["messages"]:
+                    if "pairing_code" in msg:
+                        pairing_code = msg["pairing_code"]
+                        break
+            
+            if pairing_code:
+                print(f"\n✓ Cod de asociere obținut: {pairing_code}")
+                print("\nInstrucțiuni de folosire:")
+                print("1. Deschideți WhatsApp pe telefonul dvs")
+                print("2. Mergeți la Setări > Dispozitive conectate")
+                print("3. Selectați 'Conectare dispozitiv'")
+                print("4. Introduceți codul de mai sus când vi se solicită")
+            
+            # Scrie rezultatele într-un fișier
+            with open("pairing_test_results.json", "w") as f:
+                json.dump(result_pairing, f, indent=2, default=str)
+            
+            print("\nRezultatele detaliate au fost salvate în pairing_test_results.json")
         
-    except ImportError:
-        logger.error("Nu s-a putut importa modulul bocksup. Asigură-te că este instalat corect.")
-        return {"connection": False, "errors": ["Import error"]}
-    except Exception as e:
-        logger.error(f"Eroare la testarea conexiunii: {e}")
-        return {"connection": False, "errors": [str(e)]}
-
-async def test_websocket_internals():
-    """
-    Testează direct funcționalitatea WebSocket pentru a capta mai multe detalii.
-    """
-    try:
-        import websockets
-        import ssl
-        import uuid
-        import time
-        
-        # Simulează direct comportamentul WhatsApp Web
-        USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        WEBSOCKET_URL = "wss://web.whatsapp.com/ws"
-        
-        logger.info("Testarea directă a conexiunii WebSocket...")
-        
-        # Configurare SSL
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = True
-        
-        # Pregătire headers
-        headers = {
-            "User-Agent": USER_AGENT,
-            "Origin": "https://web.whatsapp.com",
-            "Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits",
+        return {
+            "basic_test": result_basic,
+            "pairing_test": result_pairing if "result_pairing" in locals() else None
         }
         
-        # Conectare
-        client_id = str(uuid.uuid4())
-        logger.info(f"Client ID: {client_id}")
-        logger.info(f"Conectare la {WEBSOCKET_URL}...")
+    except ImportError as e:
+        logger.error(f"Nu s-a putut importa funcția de test: {e}")
+        print(f"\n✗ Eroare de import: {e}")
+        print("\nAsigurați-vă că biblioteca Bocksup este instalată corect.")
+        return {"error": f"Import error: {str(e)}"}
         
-        async with websockets.connect(
-            WEBSOCKET_URL,
-            ssl=ssl_context,
-            extra_headers=headers,
-            ping_interval=None,
-            ping_timeout=None
-        ) as websocket:
-            logger.info("Conexiune stabilită!")
-            
-            # Creare mesaj handshake
-            handshake_message = [
-                "admin",
-                "init",
-                ["2.2409.6", "Windows", "Chrome", "10"],
-                [USER_AGENT],
-                client_id,
-                True
-            ]
-            
-            # Trimitere handshake
-            logger.info("Trimitere handshake...")
-            message_tag = str(int(time.time()))
-            await websocket.send(f"{message_tag},{json.dumps(handshake_message)}")
-            
-            # Așteptare răspuns
-            logger.info("Așteptare răspuns handshake...")
-            response = await websocket.recv()
-            logger.info(f"Răspuns primit: {response[:200]}...")
-            
-            # Captarea răspunsului
-            with open("whatsapp_raw_handshake_response.txt", "w") as f:
-                f.write(response)
-            logger.info("Răspuns handshake salvat în 'whatsapp_raw_handshake_response.txt'")
-            
-            # Analiză răspuns
-            try:
-                resp_parts = response.split(",", 1)
-                if len(resp_parts) > 1:
-                    resp_tag, resp_data = resp_parts
-                    resp_json = json.loads(resp_data)
-                    logger.info(f"Tip răspuns: {resp_json.get('type', 'necunoscut')}")
-                    
-                    # Salvare răspuns JSON
-                    with open("whatsapp_parsed_handshake_response.json", "w") as f:
-                        json.dump(resp_json, f, indent=2)
-                    logger.info("Răspuns JSON salvat în 'whatsapp_parsed_handshake_response.json'")
-            except Exception as e:
-                logger.error(f"Eroare la analiza răspunsului: {e}")
-            
-            # Așteptare scurt pentru eventuale mesaje adiționale
-            logger.info("Așteptare mesaje adiționale (5 secunde)...")
-            try:
-                for i in range(5):
-                    response = await asyncio.wait_for(websocket.recv(), timeout=1)
-                    logger.info(f"Mesaj adițional primit ({i+1}): {response[:100]}...")
-                    
-                    # Salvare mesaj adițional
-                    with open(f"whatsapp_additional_message_{i+1}.txt", "w") as f:
-                        f.write(response)
-            except asyncio.TimeoutError:
-                logger.info("Nu s-au mai primit mesaje adiționale.")
-            except Exception as e:
-                logger.error(f"Eroare la primirea mesajelor adiționale: {e}")
-            
-            logger.info("Test WebSocket direct încheiat cu succes!")
-            
-    except ImportError:
-        logger.error("Nu s-au putut importa modulele necesare. Asigură-te că 'websockets' este instalat.")
     except Exception as e:
-        logger.error(f"Eroare la testul WebSocket direct: {e}")
-
-async def main():
-    """Funcția principală pentru testarea conexiunii."""
-    parser = argparse.ArgumentParser(description="Test de conexiune la serverele WhatsApp")
-    parser.add_argument("--phone", "-p", help="Număr de telefon pentru testarea pairing code", default=None)
-    parser.add_argument("--direct", "-d", action="store_true", help="Testează direct WebSocket fără bocksup")
-    parser.add_argument("--no-capture", "-n", action="store_true", help="Nu salva rezultatele în fișiere")
-    args = parser.parse_args()
-    
-    # Test prin biblioteca bocksup
-    if not args.direct:
-        await test_connection(args.phone, not args.no_capture)
-    
-    # Test direct WebSocket
-    if args.direct:
-        await test_websocket_internals()
+        logger.error(f"Eroare neașteptată: {e}")
+        print(f"\n✗ Eroare neașteptată: {e}")
+        return {"error": f"Unexpected error: {str(e)}"}
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    print("Testare conexiune WhatsApp folosind biblioteca Bocksup")
+    print("Acest script testează conexiunea la serverele WhatsApp.")
+    
+    try:
+        result = asyncio.run(test_whatsapp_connection())
+        sys.exit(0 if result.get("basic_test", {}).get("connection") else 1)
+    except KeyboardInterrupt:
+        print("\nTest oprit de utilizator")
+        sys.exit(130)
