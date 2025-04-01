@@ -8,7 +8,7 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
-runButton = "Test Implementation"
+runButton = "Verify Changes"
 
 [[workflows.workflow]]
 name = "Project"
@@ -222,6 +222,23 @@ args = "python analyze_protocol.py --verify-implementation "
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python bocksup_test_script.py --full-test"
+
+[[workflows.workflow]]
+name = "Verify Changes"
+author = 41017494
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pytest tests/ -v"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python test_server_connection.py --verify"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python analyze_protocol.py --verify-implementation"
 
 [[ports]]
 localPort = 5000
