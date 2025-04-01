@@ -120,7 +120,7 @@ class WhatsAppConnection:
 
                 self._websocket = await websockets.connect(
                     self.server_url,
-                    extra_headers=headers,
+                    additional_headers=headers,
                     ping_interval=20,
                     ping_timeout=30,
                     max_size=None,

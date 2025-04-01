@@ -75,9 +75,11 @@ class Authenticator:
     def is_authenticated(self) -> bool:
         """Verifică dacă sesiunea este autentificată și validă."""
         return (
+            hasattr(self, 'authenticated') and
             self.authenticated and
             self.client_token is not None and 
             self.server_token is not None and
+            hasattr(self, 'expires') and
             self.expires > time.time()
         )
 
