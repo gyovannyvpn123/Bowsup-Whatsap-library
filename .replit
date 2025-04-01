@@ -63,6 +63,23 @@ print('- Groups:', 'Available' if hasattr(bocksup, 'groups') else 'Not available
 print('- Media handling:', 'Available' if hasattr(bocksup, 'media') else 'Not available');
 print('- Registration:', 'Available' if hasattr(bocksup, 'registration') else 'Not available');\""""
 
+[[workflows.workflow]]
+name = "Test Suite"
+author = 41017494
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pytest tests/ -v"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python test_server_connection.py"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python analyze_protocol.py"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
