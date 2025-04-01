@@ -89,13 +89,20 @@ class Authenticator:
         """Reînnoiește token-urile de autentificare."""
         try:
             if not self.client_token or not self.server_token:
+                logger.warning("Nu există tokeni pentru reînnoire")
                 return False
 
             credentials = await self._generate_auth_credentials()
+            if not credentials:
+                logger.error("Nu s-au putut genera credențialele")
+                return False
+                
+            self.client_token = credentials.get('client_token')
+            self.server_token = credentials.get('server_token')
             
-            self.client_token = credentials['client_token']
-            self.server_token = credentials['server_token']
-            self.authenticated = True
+            if not self.client_token or not self.server_token:
+                logger.error("Tokeni lipsă în credențiale")
+                return False
                 
             self.expires = time.time() + 3600
             self.authenticated = True

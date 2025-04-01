@@ -127,11 +127,16 @@ class WhatsAppConnection:
                     close_timeout=10
                 )
 
-                # Actualizare stare
+                # Actualizare stare după conectare reușită
                 self.connection_state = CONN_STATE_CONNECTED
                 self.is_connected = True
                 self.last_activity = time.time()
                 self.retry_count = 0
+                
+                # Verificare stare conexiune
+                if not self._websocket or not self._websocket.open:
+                    logger.error("Conexiune eșuată - websocket închis")
+                    raise ConnectionError("WebSocket connection failed")
 
                 logger.info(f"[{self.connection_id}] Conectat cu succes la server")
 
