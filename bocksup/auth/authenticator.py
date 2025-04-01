@@ -75,11 +75,10 @@ class Authenticator:
     def is_authenticated(self) -> bool:
         """Verifică dacă sesiunea este autentificată și validă."""
         return (
-            hasattr(self, 'authenticated') and
-            self.authenticated and
+            getattr(self, 'authenticated', False) and
             self.client_token is not None and 
             self.server_token is not None and
-            self.expires > time.time()
+            getattr(self, 'expires', 0) > time.time()
         )
 
     async def refresh_authentication(self) -> bool:
@@ -89,12 +88,13 @@ class Authenticator:
                 return False
 
             credentials = await self._generate_auth_credentials() 
-            if not credentials or 'client_token' not in credentials or 'server_token' not in credentials:
+            if not credentials:
                 return False
                 
-            self.client_token = credentials['client_token']
-            self.server_token = credentials['server_token']
-            self.authenticated = True
+            self.client_token = credentials.get('client_token')
+            self.server_token = credentials.get('server_token')
+            if not self.client_token or not self.server_token:
+                return False
                 
             self.expires = time.time() + 3600
             self.authenticated = True
