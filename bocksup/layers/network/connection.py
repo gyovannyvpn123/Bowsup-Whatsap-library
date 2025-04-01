@@ -42,6 +42,10 @@ from ...utils.binary_utils import (
 
 logger = logging.getLogger(__name__)
 
+class SignalProtocol: # Placeholder -  This class needs to be implemented separately.
+    pass
+
+
 class WhatsAppConnection:
     """
     Gestionează conexiunea WebSocket la serverele WhatsApp.
@@ -71,11 +75,14 @@ class WhatsAppConnection:
         self.connection_state = CONN_STATE_DISCONNECTED
         self.is_connected = False
         self.last_activity = 0
+        self.retry_count = 0
+        self.max_retries = 3
 
         # Resurse conexiune
         self._websocket = None
         self._keepalive_task = None
         self._message_handler_task = None
+        self.signal_protocol = SignalProtocol()
 
         # Callbacks
         self._message_callbacks = {}
@@ -88,7 +95,7 @@ class WhatsAppConnection:
 
     async def connect(self) -> bool:
         """
-        Conectare la serverul WhatsApp.
+        Conectare la serverul WhatsApp cu retry automat.
 
         Returns:
             bool: True dacă conexiunea a fost stabilită cu succes
@@ -96,17 +103,15 @@ class WhatsAppConnection:
         Raises:
             ConnectionError: Dacă nu se poate conecta la server
         """
-        try:
-            if self.is_connected:
-                logger.warning(f"[{self.connection_id}] Deja conectat la server")
-                return True
-            self.connection_state = CONN_STATE_CONNECTING
-
+        while self.retry_count < self.max_retries:
             try:
+                if self.is_connected:
+                    logger.warning(f"[{self.connection_id}] Deja conectat la server")
+                    return True
+                self.connection_state = CONN_STATE_CONNECTING
+
                 logger.info(f"[{self.connection_id}] Conectare la {self.server_url}...")
 
-                # Folosim o metodă simplificată pentru a conecta la WebSocket
-                # Folosim metoda standard connect() din websockets
                 self._websocket = await websockets.connect(
                     self.server_url,
                     extra_headers={
@@ -124,6 +129,7 @@ class WhatsAppConnection:
                 self.connection_state = CONN_STATE_CONNECTED
                 self.is_connected = True
                 self.last_activity = time.time()
+                self.retry_count = 0
 
                 logger.info(f"[{self.connection_id}] Conectat cu succes la server")
 
@@ -140,14 +146,15 @@ class WhatsAppConnection:
                 return True
 
             except Exception as e:
-                logger.error(f"[{self.connection_id}] Eroare la conectare: {str(e)}")
+                self.retry_count += 1
+                logger.error(f"[{self.connection_id}] Eroare la conectare (încercare {self.retry_count}): {str(e)}")
                 self.connection_state = CONN_STATE_ERROR
                 self.is_connected = False
+                await asyncio.sleep(2 ** self.retry_count)
 
-                raise ConnectionError(f"Failed to connect to WhatsApp server: {str(e)}")
-        except Exception as e:
-            logger.error(f"Eroare la conectare: {e}")
-            return False
+        logger.error(f"[{self.connection_id}] Număr maxim de încercări depășit.")
+        raise ConnectionError(f"Failed to connect to WhatsApp server after multiple retries.")
+
 
     async def disconnect(self) -> None:
         """
