@@ -8,7 +8,7 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
-runButton = "Complete Test Suite"
+runButton = "Complete Testing"
 
 [[workflows.workflow]]
 name = "Project"
@@ -162,6 +162,27 @@ args = "python bocksup_test_script.py --full-test"
 
 [[workflows.workflow]]
 name = "Complete Test Suite"
+author = 41017494
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pytest tests/ -v --capture=no"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python test_server_connection.py --debug --verify --full"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python analyze_protocol.py --verify-implementation --verbose"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python bocksup_test_script.py --full-test"
+
+[[workflows.workflow]]
+name = "Complete Testing"
 author = 41017494
 mode = "sequential"
 

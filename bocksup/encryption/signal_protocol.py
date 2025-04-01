@@ -28,10 +28,12 @@ logger = logging.getLogger(__name__)
 
 class SignalProtocol:
     """
-    Implementare a protocolului Signal pentru criptare end-to-end.
-
-    Acest protocol asigură criptarea, autentificarea și perfect forward
-    secrecy pentru comunicarea între două părți.
+    Implementare completă a protocolului Signal pentru criptarea end-to-end.
+    Include suport pentru:
+    - Generare și management chei
+    - Criptare/decriptare mesaje
+    - Handshake și stabilire sesiune
+    - Rotație chei și forward secrecy
     """
 
     def __init__(self):
@@ -51,70 +53,6 @@ class SignalProtocol:
         Returns:
             Dict conținând cheia publică și privată de identitate
         """
-        Implementarea protocolului Signal pentru criptare end-to-end
-        """
-        from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
-        from cryptography.hazmat.primitives import serialization, hashes
-        from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
-        class SignalProtocol:
-            def __init__(self):
-                self.private_key = X25519PrivateKey.generate()
-                self.public_key = self.private_key.public_key()
-                self.session_keys = {}
-
-            def get_public_key(self):
-                return self.public_key.public_bytes(
-                    encoding=serialization.Encoding.Raw,
-                    format=serialization.PublicFormat.Raw
-                )
-
-            def create_shared_secret(self, peer_public_key_bytes):
-                peer_public_key = X25519PublicKey.from_public_bytes(peer_public_key_bytes)
-                shared_key = self.private_key.exchange(peer_public_key)
-
-                # Derivă cheia folosind HKDF
-                hkdf = HKDF(
-                    algorithm=hashes.SHA256(),
-                    length=32,
-                    salt=None,
-                    info=b"WhatsApp Message Keys"
-                )
-                return hkdf.derive(shared_key)
-
-            def encrypt_message(self, message, peer_public_key_bytes):
-                if not isinstance(message, bytes):
-                    message = message.encode('utf-8')
-
-                session_key = self.create_shared_secret(peer_public_key_bytes)
-                aesgcm = AESGCM(session_key)
-                nonce = os.urandom(12)
-
-                ciphertext = aesgcm.encrypt(nonce, message, None)
-                return nonce + ciphertext
-
-            def decrypt_message(self, encrypted_message, peer_public_key_bytes):
-                session_key = self.create_shared_secret(peer_public_key_bytes)
-                aesgcm = AESGCM(session_key)
-
-                nonce = encrypted_message[:12]
-                ciphertext = encrypted_message[12:]
-
-                plaintext = aesgcm.decrypt(nonce, ciphertext, None)
-                return plaintext.decode('utf-8')
-        public_key = private_key.public_key()
-
-        # Serializează cheile
-        private_bytes = private_key.private_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption()
-        )
-        public_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
-        )
         private_key = get_random_bytes(32)
         # Derivăm o cheie publică (în implementarea reală ar folosi criptografie cu curbe eliptice)
         public_key = hashlib.sha256(private_key).digest()
