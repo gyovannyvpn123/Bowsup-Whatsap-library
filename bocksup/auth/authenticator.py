@@ -75,10 +75,10 @@ class Authenticator:
     def is_authenticated(self) -> bool:
         """Verifică dacă sesiunea este autentificată și validă."""
         return (
-            getattr(self, 'authenticated', False) and
+            self.authenticated and
             self.client_token is not None and 
             self.server_token is not None and
-            getattr(self, 'expires', 0) > time.time()
+            self.expires > time.time()
         )
 
     async def refresh_authentication(self) -> bool:
