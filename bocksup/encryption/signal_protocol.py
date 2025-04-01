@@ -53,6 +53,8 @@ class SignalProtocol:
         """
         from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+        from cryptography.hazmat.primitives import hashes
 
         # Generează cheile folosind curba X25519
         private_key = X25519PrivateKey.generate()
