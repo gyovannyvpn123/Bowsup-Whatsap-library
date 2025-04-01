@@ -97,6 +97,27 @@ args = "python test_server_connection.py --protocol-test"
 task = "shell.exec"
 args = "python analyze_protocol.py --verify-implementation"
 
+[[workflows.workflow]]
+name = "Full Test Suite"
+author = 41017494
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pytest tests/ -v"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python test_server_connection.py --debug"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python analyze_protocol.py --verify-implementation"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python bocksup_test_script.py"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
