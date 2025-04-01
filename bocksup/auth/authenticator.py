@@ -65,6 +65,33 @@ class Authenticator:
         self.protocol = None
         self.pairing_code = None
         self.authenticated = False
+        self.client_token = None
+        self.server_token = None
+        self.expires = 0
+
+    def is_authenticated(self) -> bool:
+        """Verifică dacă sesiunea este autentificată și validă."""
+        return (
+            self.authenticated and
+            self.client_token is not None and 
+            self.server_token is not None and
+            self.expires > time.time()
+        )
+
+    async def refresh_authentication(self) -> bool:
+        """Reînnoiește token-urile de autentificare."""
+        try:
+            if not self.client_token or not self.server_token:
+                return False
+
+            credentials = await self._generate_auth_credentials()
+            self.client_token = credentials['client_token']
+            self.server_token = credentials['auth_token']
+            self.expires = time.time() + 3600
+            return True
+        except Exception as e:
+            logger.error(f"Eroare la reînnoirea autentificării: {str(e)}")
+            return False
     
     async def authenticate(self) -> bool:
         """

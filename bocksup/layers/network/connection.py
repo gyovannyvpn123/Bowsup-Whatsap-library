@@ -112,16 +112,18 @@ class WhatsAppConnection:
 
                 logger.info(f"[{self.connection_id}] Conectare la {self.server_url}...")
 
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+                    "Origin": "https://web.whatsapp.com",
+                    "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7"
+                }
+                
                 self._websocket = await websockets.connect(
                     self.server_url,
-                    extra_headers={
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
-                        "Origin": "https://web.whatsapp.com",
-                        "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7"
-                    },
+                    additional_headers=headers,
                     ping_interval=20,
                     ping_timeout=30,
-                    max_size=None,  # Fără limită de dimensiune pentru mesaje
+                    max_size=None,
                     close_timeout=10
                 )
 
