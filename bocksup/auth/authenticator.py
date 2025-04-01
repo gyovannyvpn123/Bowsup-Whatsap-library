@@ -75,9 +75,13 @@ class Authenticator:
     def is_authenticated(self) -> bool:
         """Verifică dacă sesiunea este autentificată și validă."""
         return (
-            self.authenticated and
+            hasattr(self, 'authenticated') and
+            self.authenticated is True and
+            hasattr(self, 'client_token') and
             self.client_token is not None and 
+            hasattr(self, 'server_token') and
             self.server_token is not None and
+            hasattr(self, 'expires') and
             self.expires > time.time()
         )
 
@@ -87,10 +91,7 @@ class Authenticator:
             if not self.client_token or not self.server_token:
                 return False
 
-            credentials = {
-                'client_token': 'new_client_token',
-                'server_token': 'new_server_token'
-            }
+            credentials = await self._generate_auth_credentials()
             
             self.client_token = credentials['client_token']
             self.server_token = credentials['server_token']
