@@ -68,6 +68,33 @@ class Authenticator:
         self.client_token = None
         self.server_token = None
         self.expires = 0
+        
+    def is_authenticated(self) -> bool:
+        """Verifică dacă sesiunea este autentificată și validă."""
+        return (
+            self.authenticated and
+            self.client_token is not None and 
+            self.server_token is not None and
+            self.expires > time.time()
+        )
+
+    async def refresh_authentication(self) -> bool:
+        """Reînnoiește token-urile de autentificare."""
+        try:
+            if not self.client_token or not self.server_token:
+                return False
+
+            credentials = await self._generate_auth_credentials()
+            self.client_token = credentials['client_token']
+            self.server_token = credentials['auth_token']
+            self.expires = time.time() + 3600
+            return True
+        except Exception as e:
+            logger.error(f"Eroare la reînnoirea autentificării: {str(e)}")
+            return False
+        self.client_token = None
+        self.server_token = None
+        self.expires = 0
 
     def is_authenticated(self) -> bool:
         """Verifică dacă sesiunea este autentificată și validă."""
@@ -135,7 +162,18 @@ class Authenticator:
                 # Process challenge and send response
                 # This would involve calculating a proper response based on credentials
                 # For now, we just log it
-                logger.info("Procesarea challenge-ului nu este implementată complet încă")
+                # Process challenge response
+                try:
+                    challenge_response = await self._calculate_challenge_response(challenge_data)
+                    await self.connection.send_message({
+                        "type": "auth_response",
+                        "data": challenge_response
+                    })
+                    self.authenticated = True
+                    return True
+                except Exception as e:
+                    logger.error(f"Eroare la procesarea challenge-ului: {str(e)}")
+                    return False
             
             self.connection.register_challenge_callback(challenge_callback)
             
