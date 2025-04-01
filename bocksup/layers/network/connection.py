@@ -117,7 +117,7 @@ class WhatsAppConnection:
                     "Origin": "https://web.whatsapp.com",
                     "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7"
                 }
-                
+
                 self._websocket = await websockets.connect(
                     self.server_url,
                     additional_headers=headers,
@@ -125,7 +125,8 @@ class WhatsAppConnection:
                     ping_timeout=30,
                     max_size=None,
                     close_timeout=10,
-                    ssl=True
+                    ssl=True,
+                    compression=None
                 )
 
                 # Actualizare stare
