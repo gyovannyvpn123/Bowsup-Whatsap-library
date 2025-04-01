@@ -68,6 +68,9 @@ class Authenticator:
         self.client_token = None
         self.server_token = None
         self.expires = 0
+        self.client_token = None
+        self.server_token = None
+        self.expires = 0
 
     def is_authenticated(self) -> bool:
         """Verifică dacă sesiunea este autentificată și validă."""
