@@ -217,7 +217,7 @@ args = "python test_server_connection.py --debug --verify"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python analyze_protocol.py --verify-implementation"
+args = "python analyze_protocol.py --verify-implementation "
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

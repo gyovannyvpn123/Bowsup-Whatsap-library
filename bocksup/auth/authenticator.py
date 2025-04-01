@@ -79,7 +79,7 @@ class Authenticator:
             self.client_token is not None and 
             self.server_token is not None and
             self.expires > time.time()
-        )
+        ) if hasattr(self, 'authenticated') else False
 
     async def refresh_authentication(self) -> bool:
         """Reînnoiește token-urile de autentificare."""
@@ -88,8 +88,14 @@ class Authenticator:
                 return False
 
             credentials = await self._generate_auth_credentials() 
-            self.client_token = credentials['client_token']
-            self.server_token = credentials['server_token']
+            if not credentials:
+                return False
+                
+            self.client_token = credentials.get('client_token')
+            self.server_token = credentials.get('server_token')
+            if not self.client_token or not self.server_token:
+                return False
+                
             self.expires = time.time() + 3600
             self.authenticated = True
             return True
