@@ -80,6 +80,23 @@ args = "python test_server_connection.py"
 task = "shell.exec"
 args = "python analyze_protocol.py"
 
+[[workflows.workflow]]
+name = "Test Protocol Implementation"
+author = 41017494
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pytest tests/"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python test_server_connection.py --protocol-test"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python analyze_protocol.py --verify-implementation"
+
 [[ports]]
 localPort = 5000
 externalPort = 80

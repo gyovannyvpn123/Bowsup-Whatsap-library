@@ -86,16 +86,24 @@ class WhatsAppConnection:
         # Protocol
         self.protocol = WebSocketProtocol(client_id=self.connection_id)
     
-    async def connect(self) -> bool:
+    async def connect(self, max_retries: int = 5) -> bool:
         """
-        Conectare la serverul WhatsApp.
+        Conectare la serverul WhatsApp cu suport pentru reconectare automată.
         
+        Args:
+            max_retries: Numărul maxim de încercări de reconectare
+            
         Returns:
             bool: True dacă conexiunea a fost stabilită cu succes
             
         Raises:
-            ConnectionError: Dacă nu se poate conecta la server
+            ConnectionError: Dacă nu se poate conecta la server după toate încercările
         """
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                if self.is_connected:
+                    return True
         if self.is_connected:
             logger.warning(f"[{self.connection_id}] Deja conectat la server")
             return True

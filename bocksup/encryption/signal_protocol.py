@@ -46,13 +46,28 @@ class SignalProtocol:
         
     def generate_identity(self) -> Dict[str, Any]:
         """
-        Generează perechea de chei de identitate pentru acest client.
+        Generează perechea de chei de identitate pentru acest client folosind X3DH.
         
         Returns:
             Dict conținând cheia publică și privată de identitate
         """
-        # În implementarea reală, aceasta ar folosi curbe eliptice Curve25519
-        # Pentru acest exemplu, generăm doar chei AES aleatorii
+        from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+        from cryptography.hazmat.primitives import serialization
+
+        # Generează cheile folosind curba X25519
+        private_key = X25519PrivateKey.generate()
+        public_key = private_key.public_key()
+        
+        # Serializează cheile
+        private_bytes = private_key.private_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PrivateFormat.Raw,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+        public_bytes = public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw
+        )
         private_key = get_random_bytes(32)
         # Derivăm o cheie publică (în implementarea reală ar folosi criptografie cu curbe eliptice)
         public_key = hashlib.sha256(private_key).digest()
